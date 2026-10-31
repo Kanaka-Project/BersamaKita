@@ -15,10 +15,11 @@ if (!getApps().length) {
       });
       console.log('Firebase Admin initialized with custom service account JSON.');
     } else {
-      initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'bersamakita-app',
-      });
-      console.log('Firebase Admin initialized with application default credentials.');
+      // Do NOT fall back to application default credentials: on a local dev machine
+      // there are none, which crashes the process. Leave Admin uninitialized so the
+      // server can still boot; endpoints that need Admin will return 503 until a
+      // service account JSON is provided in FIREBASE_SERVICE_ACCOUNT_JSON.
+      console.warn('FIREBASE_SERVICE_ACCOUNT_JSON is not set. Firebase Admin disabled (local dev without service account).');
     }
   } catch (error) {
     console.error('Failed to initialize Firebase Admin:', error);
