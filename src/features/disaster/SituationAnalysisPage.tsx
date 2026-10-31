@@ -9,7 +9,6 @@ import {
   Activity,
   CheckCircle2,
   Package,
-  AlertTriangle,
   ExternalLink,
   BarChart3,
 } from 'lucide-react';
@@ -203,13 +202,6 @@ export const SituationAnalysisPage: React.FC<SituationAnalysisPageProps> = ({
               <span className="font-bold text-slate-800 block text-sm">Terpal & Selimut</span>
               <span className="text-xs text-slate-600">Tempat Pengungsian</span>
             </div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <span>
-              Catatan: Analisis situasi dan estimasi kebutuhan logistik dihitung secara otomatis menggunakan formula aturan matematika JavaScript (Rule-Based), bukan melalui generative model AI.
-            </span>
           </div>
         </div>
 

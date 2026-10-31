@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, BarChart3, ShieldCheck, AlertTriangle, Package, Heart, MapPin, ExternalLink } from 'lucide-react';
+import { X, BarChart3, ShieldCheck, Package, Heart, MapPin, ExternalLink } from 'lucide-react';
 import { Disaster } from '../../types';
 import { formatShortDateIndo, formatRelativeTime } from '../../lib/utils';
 
@@ -142,14 +142,6 @@ export const AnalisisSituasiModal: React.FC<AnalisisSituasiModalProps> = ({
               <span className="text-[11px] text-slate-600">Tempat Pengungsian</span>
             </div>
           </div>
-        </div>
-
-        {/* Deterministic Logic Notice per Section 4 */}
-        <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-2 mb-4">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <span>
-            Catatan: Analisis situasi dan estimasi kebutuhan logistik dihitung secara otomatis menggunakan formula aturan matematika JavaScript (Rule-Based), bukan melalui generative model AI.
-          </span>
         </div>
 
         {/* CTA */}
