@@ -1,0 +1,31 @@
+# Reference folder (must NOT be committed/pushed)
+hackaton-staging/
+C:/Users/Rezaaaa/Pictures/hackaton-staging/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.vercel/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+deploy.log
+redeploy*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary
+tmp/
+temp/
