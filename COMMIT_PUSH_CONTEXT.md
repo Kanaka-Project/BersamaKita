@@ -48,14 +48,14 @@ git config user.email  # -> wesrsmobile22@gmail.com
 
 ## 5. Folder Referensi (TIDAK boleh di-commit / di-push)
 
-- **Path referensi (copy source):** `C:\Users\Rezaaaa\Pictures\hackaton-staging`
+- **Path referensi (copy source):** `C:\Users\Rezaaaa\Pictures\BersamaKita\hackaton-starter`
 - Folder ini berisi implementasi acuan (React + Vite + Express, dll.) yang digunakan
   sebagai rujukan untuk menyalin file ke repository ini.
 - **Folder ini TIDAK boleh di-commit atau di-push** ke repository BersamaKita.
-- Jangan menambahkan folder `hackaton-staging` ke dalam tree repository.
+- Jangan menambahkan folder `hackaton-starter` ke dalam tree repository.
 - Gunakan folder tersebut hanya sebagai sumber copy; salin file yang diperlukan secara
   selektif ke struktur repository ini.
-- Pastikan `.gitignore` mengecualikan `hackaton-staging/` (jika pernah disalin masuk),
+- Pastikan `.gitignore` mengecualikan `hackaton-starter/` (jika pernah disalin masuk),
   `node_modules/`, `dist/`, `.env`, `*.log`, dll.
 
 ## 6. Aturan Commit & Push
