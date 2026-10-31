@@ -5,6 +5,12 @@
 /** Admin fee rate: 0,17% (0.0017) of the nominal donation / withdrawal. */
 export const ADMIN_FEE_RATE = 0.0017;
 
+/** Minimum donation amount in IDR (Rp10.000). */
+export const MIN_DONATION = 10_000;
+
+/** Maximum donation amount per transaction in IDR (Rp50.000.000). */
+export const MAX_DONATION = 50_000_000;
+
 /** Minimum withdrawal (penarikan/pencairan) amount in IDR. */
 export const MIN_WITHDRAWAL = 1_000_000;
 

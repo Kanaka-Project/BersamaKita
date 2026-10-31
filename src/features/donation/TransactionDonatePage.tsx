@@ -15,12 +15,13 @@ import {
   PauseCircle,
   Info,
   Users,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../../components/feedback/Toast';
 import { Disaster, Donation } from '../../types';
 import { formatRupiah, formatRelativeTime, FUNDRAISING_TARGET } from '../../lib/utils';
-import { calculateAdminFee, calculateTotalPayment } from '../../lib/fees';
+import { calculateAdminFee, calculateTotalPayment, MIN_DONATION, MAX_DONATION } from '../../lib/fees';
 import { useFundraisingSummary } from '../../hooks/useFundraisingSummary';
 import {
   createDonation,
@@ -205,7 +206,18 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
     );
   }
 
-  const finalAmount = customAmount ? parseInt(customAmount, 10) || 0 : selectedAmount;
+  const parsedCustomAmount = customAmount ? parseInt(customAmount, 10) || 0 : 0;
+  const finalAmount = customAmount ? parsedCustomAmount : selectedAmount;
+  const isAmountTooLow = customAmount !== '' && parsedCustomAmount < MIN_DONATION;
+  const isAmountTooHigh = customAmount !== '' && parsedCustomAmount > MAX_DONATION;
+  const hasAmountError = isAmountTooLow || isAmountTooHigh;
+
+  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length <= 8) {
+      setCustomAmount(raw);
+    }
+  };
   // Transparent 0,17% admin fee — single source: src/lib/fees.ts
   const adminFee = calculateAdminFee(finalAmount);
   const totalPayment = calculateTotalPayment(finalAmount);
@@ -219,8 +231,13 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
       return;
     }
 
-    if (finalAmount < 10000) {
-      showToast('Minimum donasi adalah Rp10.000', 'warning');
+    if (finalAmount < MIN_DONATION) {
+      showToast(`Minimum donasi adalah ${formatRupiah(MIN_DONATION)}`, 'warning');
+      return;
+    }
+
+    if (finalAmount > MAX_DONATION) {
+      showToast(`Maksimum donasi per transaksi adalah ${formatRupiah(MAX_DONATION)}`, 'warning');
       return;
     }
 
@@ -356,7 +373,7 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
                 </div>
 
                 {/* Preset Buttons */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {presetAmounts.map((amt) => {
                     const isSelected = selectedAmount === amt && !customAmount;
                     return (
@@ -367,7 +384,7 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
                           setSelectedAmount(amt);
                           setCustomAmount('');
                         }}
-                        className={`py-3 px-2 rounded-xl text-sm font-semibold transition-all border ${
+                        className={`py-3 px-2 rounded-xl text-sm font-semibold transition-all border truncate ${
                           isSelected
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-600 shadow-sm'
                             : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 hover:border-emerald-500'
@@ -381,23 +398,41 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
 
                 {/* Custom Amount Field */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Atau Masukkan Nominal Bebas:
-                  </label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Atau Masukkan Nominal Bebas:
+                    </label>
+                    <span className="text-[11px] text-slate-400">
+                      Min. {formatRupiah(MIN_DONATION)} • Maks. {formatRupiah(MAX_DONATION)}
+                    </span>
+                  </div>
                   <div className="relative">
                     <span className="absolute left-4 top-3 text-sm font-semibold text-slate-400">Rp</span>
                     <input
-                      type="number"
-                      min={10000}
-                      step={5000}
+                      type="text"
+                      inputMode="numeric"
                       value={customAmount}
-                      onChange={(e) => {
-                        setCustomAmount(e.target.value);
-                      }}
+                      onChange={handleCustomAmountChange}
                       placeholder="Contoh: 150000"
-                      className="w-full pl-11 pr-4 py-2.5 rounded-lg border border-slate-300 text-sm font-mono font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className={`w-full pl-11 pr-4 py-2.5 rounded-lg border text-sm font-mono font-semibold text-slate-800 focus:outline-none focus:ring-2 transition-colors ${
+                        hasAmountError
+                          ? 'border-red-400 focus:ring-red-400 bg-red-50/20'
+                          : 'border-slate-300 focus:ring-emerald-500'
+                      }`}
                     />
                   </div>
+
+                  {/* Validation Feedback */}
+                  {hasAmountError && (
+                    <div className="flex items-center gap-1.5 mt-2 text-xs text-red-600">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {isAmountTooLow
+                          ? `Nominal minimal adalah ${formatRupiah(MIN_DONATION)}`
+                          : `Nominal maksimal per transaksi adalah ${formatRupiah(MAX_DONATION)}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -518,15 +553,15 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
                     return (
                       <div className="pt-2 space-y-2 border-t border-slate-100">
                         <div className="flex items-end justify-between gap-2 text-xs">
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-[10px] font-semibold text-slate-500 block">
                               Dana Terkumpul (Semua Donatur)
                             </span>
-                            <span className="font-mono text-sm font-extrabold text-emerald-700">
+                            <span className="font-mono text-sm font-extrabold text-emerald-700 truncate block">
                               {formatRupiah(stats.total)}
                             </span>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <span className="text-xs font-bold text-slate-700 block">{percent}%</span>
                             <span className="text-[10px] text-slate-500">
                               dari {formatRupiah(target)}
@@ -575,35 +610,39 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
                 </div>
 
                 <div className="space-y-2 border-t border-slate-100 pt-4 text-sm">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Nominal Donasi</span>
-                    <span className="font-mono font-semibold text-slate-900">{formatRupiah(finalAmount)}</span>
+                  <div className="flex justify-between items-center gap-2 text-slate-600">
+                    <span className="shrink-0 text-xs sm:text-sm">Nominal Donasi</span>
+                    <span className="font-mono font-semibold text-slate-900 text-right truncate">
+                      {formatRupiah(finalAmount)}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-slate-600">
-                    <div className="flex items-center gap-1">
-                      <span>Biaya Admin (0,17%)</span>
+                  <div className="flex justify-between items-center gap-2 text-slate-600">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs sm:text-sm">Biaya Admin (0,17%)</span>
                       <div className="group relative flex items-center">
                         <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
                           Biaya administrasi digunakan untuk memastikan nominal dana donasi yang tercatat tetap utuh.
                         </div>
                       </div>
                     </div>
-                    <span className="font-mono font-semibold text-slate-900">{formatRupiah(adminFee)}</span>
+                    <span className="font-mono font-semibold text-slate-900 text-right truncate">
+                      {formatRupiah(adminFee)}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-baseline border-t border-slate-100 pt-4">
-                  <span className="text-sm font-bold text-slate-900">Total Tagihan</span>
-                  <span className="text-2xl font-extrabold font-mono text-emerald-600">
+                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 border-t border-slate-100 pt-4">
+                  <span className="text-sm font-bold text-slate-900 shrink-0">Total Tagihan</span>
+                  <span className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-600 text-right truncate">
                     {formatRupiah(totalPayment)}
                   </span>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:hover:scale-100"
+                  disabled={isSubmitting || hasAmountError}
+                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:hover:scale-100 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin text-white" />

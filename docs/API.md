@@ -36,7 +36,7 @@ This document outlines the API endpoints provided by the backend (`server/app.ts
 1. **`POST /api/payments/duitku/create`**
    - **Headers**: `Content-Type: application/json`
    - **Body**: `{ donationId, amount, donorName, donorEmail, donorPhone?, paymentMethod? }`
-     - `amount` = **nominal donasi** (minimum **Rp10.000**).
+     - `amount` = **nominal donasi** (minimum **Rp10.000**, maksimum **Rp50.000.000** per transaksi).
      - `paymentMethod` must be `'SP'` (QRIS) or omitted (defaults to QRIS). `'DA'`/`'SA'` are rejected with `400 "Metode pembayaran tidak didukung. Hanya QRIS."`
    - **Description**: Computes the transparent 0,17% admin fee server-side (`src/lib/fees.ts`) and charges `paymentAmount = amount + fee`. Generates **MD5** signature (`merchantCode + merchantOrderId + paymentAmount + apiKey`) and sends a Duitku `inquiry`. `expiryPeriod: 60` minutes (kept in sync with the checkout countdown).
    - **Response**: `{ success: true, reference, paymentUrl?, qrString?, vaNumber?, fee, totalAmount }`

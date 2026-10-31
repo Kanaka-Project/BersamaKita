@@ -28,7 +28,6 @@ import { AdminPortalView } from './features/admin/AdminPortalView';
 import { PartnerAuthPage } from './features/partner/PartnerAuthPage';
 import { PartnerDashboardView } from './features/partner/PartnerDashboardView';
 import { CardSkeleton } from './components/feedback/Skeleton';
-import { HackathonBanner } from './components/layout/HackathonBanner';
 import { FaqPage } from './features/public/FaqPage';
 import { RefundPolicyPage } from './features/public/RefundPolicyPage';
 import { TermsPage } from './features/public/TermsPage';
@@ -540,7 +539,6 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <HackathonBanner />
           <MainRoutes />
         </ToastProvider>
       </AuthProvider>

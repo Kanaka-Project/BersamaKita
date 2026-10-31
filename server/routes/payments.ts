@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { adminDb } from '../../src/config/firebase-admin.js';
-import { calculateAdminFee, calculateTotalPayment } from '../../src/lib/fees.js';
+import { calculateAdminFee, calculateTotalPayment, MIN_DONATION, MAX_DONATION } from '../../src/lib/fees.js';
 
 const router = Router();
 
@@ -16,10 +16,10 @@ router.post('/create', async (req: Request, res: Response) => {
       paymentMethod,
     } = req.body;
 
-    if (!donationId || !amount || amount < 10000) {
+    if (!donationId || !amount || amount < MIN_DONATION || amount > MAX_DONATION) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter donasi tidak valid. Minimum donasi Rp10.000.',
+        message: `Parameter donasi tidak valid. Donasi minimal Rp${MIN_DONATION.toLocaleString('id-ID')} dan maksimal Rp${MAX_DONATION.toLocaleString('id-ID')}.`,
       });
     }
 

@@ -21,7 +21,7 @@ Contoh: Donasi Rp100.000 → Biaya Admin Rp170 → Total Dibayar Rp100.170
 ## Architecture
 
 1. **Initiation (Frontend)**: User initiates a donation on `/transaction/donate/:disasterId`. QRIS is the only method (no other options in UI or API).
-2. **Creation (Backend)**: `DuitkuPaymentService` (`src/services/duitku.ts`) calls `POST /api/payments/duitku/create` (nominal donasi minimum **Rp10.000**). The backend computes the 0,17% fee server-side, then calls Duitku with `paymentMethod: 'SP'` and `paymentAmount = amount + fee`.
+2. **Creation (Backend)**: `DuitkuPaymentService` (`src/services/duitku.ts`) calls `POST /api/payments/duitku/create` (nominal donasi minimum **Rp10.000**, maksimum **Rp50.000.000** per transaksi). The backend computes the 0,17% fee server-side, then calls Duitku with `paymentMethod: 'SP'` and `paymentAmount = amount + fee`.
 3. **Duitku API**: Backend generates an **MD5** signature (`merchantCode + merchantOrderId + paymentAmount + apiKey`) and sends a `POST` request to the Duitku `inquiry` endpoint (`sandbox.duitku.com` or `passport.duitku.com`). `expiryPeriod: 60` menit (disinkronkan dengan countdown checkout).
 4. **Checkout (Frontend)**: Backend returns `qrString` with `fee` and `totalAmount`. The checkout page shows the fee breakdown and checks the transaction status via `/api/payments/duitku/check-status`.
 5. **Callback (Backend)**: Duitku sends a webhook to `/api/payments/duitku/callback` when payment is completed.
