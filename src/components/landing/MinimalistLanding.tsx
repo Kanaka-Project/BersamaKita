@@ -10,11 +10,12 @@ import {
 import { useAuth } from '../../features/auth/AuthContext';
 import { useToast } from '../feedback/Toast';
 
+// Real earthquake disaster photos from Unsplash (free license)
 const CAROUSEL_IMAGES = [
-  'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1532629345422-7515f3d16bb7?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1677233861362-c3aa97f11638?auto=format&fit=crop&w=1920&q=80', // Reruntuhan gempa Turki — İskenderun, Hatay
+  'https://images.unsplash.com/photo-1638890809947-673d33ac18d4?auto=format&fit=crop&w=1920&q=80', // Puing bangunan kota pasca gempa
+  'https://images.unsplash.com/photo-1621077742647-ec3354f77c5d?auto=format&fit=crop&w=1920&q=80', // Kerusakan struktur bangunan
+  'https://images.unsplash.com/photo-1761251947432-0ad734f43697?auto=format&fit=crop&w=1920&q=80', // Bangunan hancur dengan struktur terbuka
 ];
 
 export const MinimalistLanding: React.FC = () => {
