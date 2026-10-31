@@ -19,6 +19,7 @@ import {
   X,
   Sparkles,
   ChevronDown,
+  Info,
 } from 'lucide-react';
 import { PartnerAllocation, DistributionMilestoneKey, DistributionMilestone, Donation } from '../../types';
 import { updateAllocationMilestone, addAuditLog } from '../../services/firebase/firestore';
@@ -227,90 +228,148 @@ export const DistributionProgressCard: React.FC<DistributionProgressCardProps> =
   const percentCompleted = Math.round(
     (completedKeys.size / MILESTONE_DEFINITIONS.length) * 100
   );
+  const nextStep = MILESTONE_DEFINITIONS.find((m) => !completedKeys.has(m.key));
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm transition-all duration-300 overflow-hidden">
-      {/* Header Info & Progress Bar (Collapsible Toggle) */}
-      <div 
-        className={`p-6 sm:p-7 space-y-4 cursor-pointer hover:bg-slate-50/50 transition-colors ${
+    <div className="bg-white rounded-xl border border-slate-200/80 transition-colors hover:border-slate-300 overflow-hidden">
+      {/* Header Info & Progress (Collapsible Toggle) */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        onKeyDown={(e) => {
+          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className={`p-6 sm:p-7 space-y-5 cursor-pointer transition-colors hover:bg-slate-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-900/15 ${
           isExpanded ? 'border-b border-slate-100' : ''
         }`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+          {/* Identity */}
+          <div className="min-w-0 space-y-4">
+            <span
+              className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold ring-1 ring-inset ${
+                allocation.status === 'completed'
+                  ? 'bg-emerald-50 text-emerald-700 ring-emerald-200/70'
+                  : 'bg-sky-50 text-sky-700 ring-sky-200/70'
+              }`}
+            >
               <span
-                className="font-mono text-xs font-bold text-slate-600"
-                title={`ID Alokasi: ${allocation.id}`}
-              >
-                ID: …{allocation.id.slice(-5)}
-              </span>
-              <span
-                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                  allocation.status === 'completed'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-indigo-100 text-indigo-700'
+                className={`w-1.5 h-1.5 rounded-full ${
+                  allocation.status === 'completed' ? 'bg-emerald-500' : 'bg-sky-500'
                 }`}
-              >
-                {allocation.status === 'completed'
-                  ? 'Penyaluran Selesai 100%'
-                  : 'Dalam Penyaluran Lapangan'}
-              </span>
+              />
+              {allocation.status === 'completed' ? 'Penyaluran Selesai' : 'Dalam Penyaluran'}
+            </span>
+
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                {donorDonation ? 'Donasi Anda' : 'Alokasi Bantuan'}
+              </p>
+              <p className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
+                {formatRupiah(donorDonation ? donorDonation.amount : allocation.amount)}
+              </p>
             </div>
-            <h4 className="text-lg font-extrabold text-slate-900 tracking-tight">
-              {donorDonation
-                ? `Donasi Anda: ${formatRupiah(donorDonation.amount)}`
-                : `Alokasi Bantuan: ${formatRupiah(allocation.amount)}`}
-            </h4>
-            <p className="text-xs text-slate-600 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-500" />
-              <span>
-                Mitra Penyalur Resmi:{' '}
-                <strong className="text-slate-800">{allocation.partnerName}</strong>
-              </span>
-            </p>
-            {allocation.disasterTitle && (
-              <p className="text-xs text-slate-600 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                <span>
-                  Bencana Tujuan: <strong className="text-slate-800">{allocation.disasterTitle}</strong>
+
+            <div className="space-y-2">
+              {allocation.disasterTitle && (
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    Bencana Tujuan
+                  </p>
+                  <h4 className="mt-0.5 text-[15px] font-semibold leading-snug text-slate-900 flex items-start gap-1.5">
+                    <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                    <span>{allocation.disasterTitle}</span>
+                  </h4>
+                </div>
+              )}
+              <p className="text-xs text-slate-500 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span
+                  className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600"
+                  title={`ID Alokasi: ${allocation.id}`}
+                >
+                  ID …{allocation.id.slice(-5)}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                  <span>
+                    Mitra Penyalur Resmi:{' '}
+                    <span className="font-medium text-slate-700">{allocation.partnerName}</span>
+                  </span>
                 </span>
               </p>
-            )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 sm:justify-end">
-            <div className="sm:text-right space-y-1 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100 min-w-[200px]">
-              <div className="flex items-center sm:justify-end gap-1.5 text-xs text-slate-600">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Status Penyaluran</span>
+          {/* Stage progress */}
+          <div className="flex items-start gap-3 lg:shrink-0">
+            <div className="flex-1 lg:flex-none lg:w-[260px] space-y-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm font-semibold text-slate-900 tabular-nums">
+                  {completedKeys.size}{' '}
+                  <span className="font-normal text-slate-500">
+                    dari {MILESTONE_DEFINITIONS.length} tahap
+                  </span>
+                </span>
+                <span className="text-xs font-medium text-slate-500 tabular-nums">{percentCompleted}%</span>
               </div>
-              <div className="text-base font-extrabold text-slate-900 font-mono">
-                {completedKeys.size} dari {MILESTONE_DEFINITIONS.length} Tahap
+
+              <div
+                role="progressbar"
+                aria-label="Progres penyaluran"
+                aria-valuemin={0}
+                aria-valuemax={MILESTONE_DEFINITIONS.length}
+                aria-valuenow={completedKeys.size}
+                className="flex gap-1"
+              >
+                {MILESTONE_DEFINITIONS.map((def) => (
+                  <span
+                    key={def.key}
+                    title={`${def.stepNumber}. ${def.label}`}
+                    className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${
+                      completedKeys.has(def.key)
+                        ? 'bg-emerald-500'
+                        : nextStep?.key === def.key
+                        ? 'bg-sky-300'
+                        : 'bg-slate-200'
+                    }`}
+                  />
+                ))}
               </div>
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${percentCompleted}%` }}
-                />
-              </div>
+
+              <p className="text-xs text-slate-500">
+                {nextStep ? (
+                  <>
+                    Berikutnya: <span className="font-medium text-slate-700">{nextStep.label}</span>
+                  </>
+                ) : (
+                  'Semua tahap telah selesai'
+                )}
+              </p>
             </div>
-            
-            <button 
-              className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-              aria-label="Toggle Accordion"
+
+            <button
+              type="button"
+              className="w-8 h-8 flex shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              aria-label={isExpanded ? 'Tutup detail penyaluran' : 'Buka detail penyaluran'}
+              aria-expanded={isExpanded}
             >
-              <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+              />
             </button>
           </div>
         </div>
 
         {mode === 'partner' && allocation.status !== 'completed' && (
-          <div className="text-xs bg-indigo-50 border border-indigo-200 text-indigo-900 px-4 py-2.5 rounded-2xl font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping shrink-0" />
+          <div className="flex items-start gap-3 rounded-lg border border-indigo-100/80 bg-indigo-50/40 px-4 py-3 text-[13px] leading-relaxed text-indigo-900/80">
+            <Info className="w-4 h-4 mt-0.5 shrink-0 text-indigo-400" aria-hidden="true" />
             <span>
-              <strong>Mode Mitra Lapangan:</strong> Anda dapat memperbarui setiap tahapan secara instan dengan mengklik tombol pada alur pelacakan vertikal di bawah.
+              <strong className="font-semibold text-indigo-900">Mode Mitra Lapangan:</strong> Anda dapat memperbarui setiap tahapan secara instan dengan mengklik tombol pada alur pelacakan vertikal di bawah.
             </span>
           </div>
         )}

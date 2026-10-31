@@ -16,6 +16,11 @@ import {
   LogOut,
   ArrowLeft,
   ListTodo,
+  Wallet,
+  Send,
+  BadgeCheck,
+  Truck,
+  Info,
 } from 'lucide-react';
 import {
   PartnerAllocation,
@@ -37,6 +42,54 @@ import { useToast } from '../../components/feedback/Toast';
 import { ImageUploadField } from '../../components/ImageUploadField';
 import { formatRupiah, formatDateIndo } from '../../lib/utils';
 import { DistributionProgressCard } from '../distribution/DistributionProgressCard';
+
+type MetricTone = 'emerald' | 'sky' | 'amber';
+
+const METRIC_TONES: Record<MetricTone, string> = {
+  emerald: 'bg-emerald-50 text-emerald-600',
+  sky: 'bg-sky-50 text-sky-600',
+  amber: 'bg-amber-50 text-amber-600',
+};
+
+type PillTone = 'green' | 'blue' | 'amber' | 'slate';
+
+const PILL_TONES: Record<PillTone, string> = {
+  green: 'bg-emerald-50 text-emerald-700 ring-emerald-200/70',
+  blue: 'bg-sky-50 text-sky-700 ring-sky-200/70',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-200/70',
+  slate: 'bg-slate-50 text-slate-600 ring-slate-200',
+};
+
+const Pill: React.FC<{
+  tone: PillTone;
+  icon?: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}> = ({ tone, icon: Icon, children }) => (
+  <span
+    className={`inline-flex self-start items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold whitespace-nowrap ring-1 ring-inset ${PILL_TONES[tone]}`}
+  >
+    {Icon && <Icon className="w-3 h-3" />}
+    {children}
+  </span>
+);
+
+/** Hover/focus tooltip for compact status badges. */
+const InfoTip: React.FC<{ id: string; text: string; children: React.ReactNode }> = ({
+  id,
+  text,
+  children,
+}) => (
+  <span className="group relative inline-flex" tabIndex={0} aria-describedby={id}>
+    {children}
+    <span
+      id={id}
+      role="tooltip"
+      className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-60 rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus:opacity-100"
+    >
+      {text}
+    </span>
+  </span>
+);
 
 interface PartnerDashboardViewProps {
   allocations: PartnerAllocation[];
@@ -283,36 +336,77 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
     }
   };
 
+  const tabs: { id: typeof activeTab; label: string; path: string; count?: number }[] = [
+    { id: 'all', label: 'Ringkasan Mitra', path: '/partner' },
+    { id: 'tasks', label: 'Alokasi & Tugas', path: '/partner/tasks', count: allocations.length },
+    { id: 'distribution', label: 'Penyaluran Lapangan', path: '/partner/distribution' },
+    { id: 'reports', label: 'Laporan Distribusi', path: '/partner/reports', count: reports.length },
+  ];
+
+  const metrics: {
+    label: string;
+    value: string;
+    hint: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: MetricTone;
+  }[] = [
+    {
+      label: 'Total Donasi Masuk',
+      value: formatRupiah(totalDonationsPaid),
+      hint: `${paidDonations.length} donasi terverifikasi`,
+      icon: Wallet,
+      tone: 'emerald',
+    },
+    {
+      label: 'Total Dana Dialokasikan',
+      value: formatRupiah(totalAllocated),
+      hint: `${allocations.length} alokasi penugasan`,
+      icon: Send,
+      tone: 'sky',
+    },
+    {
+      label: 'Dana Dikonfirmasi',
+      value: formatRupiah(totalReceived),
+      hint: 'Kas posko, siap/telah dibelanjakan',
+      icon: BadgeCheck,
+      tone: 'emerald',
+    },
+    {
+      label: 'Laporan Distribusi',
+      value: String(reports.length),
+      hint: 'Foto & berita acara terdokumentasi',
+      icon: FileCheck2,
+      tone: 'amber',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-slate-800 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="font-admin min-h-screen bg-[#FAFAFA] text-slate-900 flex flex-col antialiased selection:bg-slate-900 selection:text-white">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-            <Building2 className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-slate-900 tracking-tight">
-                Bersama Kita — Portal Mitra Lapangan
-              </span>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
-                MITRA
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-500 font-mono">
-              {staffSession?.email || 'partnerbersamakita@protonmail.com'}
-            </p>
+      <header className="sticky top-0 z-40 h-14 bg-white/90 backdrop-blur border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <img src="/assets/images/logo.svg" alt="Logo Bersama Kita" className="w-7 h-7 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-sm text-slate-900 tracking-tight truncate">Bersama Kita</span>
+            <span className="hidden sm:inline text-slate-300">/</span>
+            <span className="hidden sm:inline text-sm text-slate-500 truncate">Portal Mitra Lapangan</span>
+            <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
+              Mitra
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <span className="hidden lg:block text-xs text-slate-500 mr-2">
+            {staffSession?.email || 'partnerbersamakita@protonmail.com'}
+          </span>
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-transparent hover:bg-slate-100 text-slate-500 hover:text-slate-900 text-xs font-semibold transition-all border border-transparent"
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Lihat Tampilan Donatur</span>
+            <span className="hidden sm:inline">Lihat Tampilan Donatur</span>
+            <span className="sm:hidden">Donatur</span>
           </button>
 
           <button
@@ -320,8 +414,9 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
               logoutStaff();
               navigate('/partner/auth');
             }}
-            className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30"
             title="Keluar / Logout Mitra"
+            aria-label="Keluar dari akun mitra"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -329,306 +424,275 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
       </header>
 
       {/* Main Container */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Header and Summary */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4 text-slate-800 w-full">
-          <div className="w-full">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">
-              <Building2 className="w-4 h-4 text-indigo-600" />
-              <span>Dashboard Mitra Operasional & Distribusi</span>
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 w-full">
+      <div className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-10">
+        {/* Page heading + tabs */}
+        <div className="space-y-6">
+          <div>
+            <p className="text-xs font-medium text-slate-500">Dashboard Mitra Operasional &amp; Distribusi</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
               {staffSession?.name || 'Mitra Tanggap Bencana'}
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5 w-full">
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-500 max-w-2xl leading-relaxed">
               Kelola penerimaan dana alokasi bantuan dan laporkan hasil penyaluran langsung dari lapangan.
             </p>
           </div>
-        </div>
 
-        {/* Partner Sub-Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => navigate('/partner')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-slate-100 text-slate-900 font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-            }`}
+          {/* Underline tabs */}
+          <nav
+            aria-label="Navigasi portal mitra"
+            className="-mx-4 sm:mx-0 px-4 sm:px-0 border-b border-slate-200/80 overflow-x-auto"
           >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Ringkasan Mitra</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/partner/tasks')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'tasks'
-                ? 'bg-slate-100 text-slate-900 font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-            }`}
-          >
-            <ListTodo className="w-3.5 h-3.5" />
-            <span>Alokasi & Tugas ({allocations.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/partner/distribution')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'distribution'
-                ? 'bg-slate-100 text-slate-900 font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-            }`}
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Penyaluran Lapangan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/partner/reports')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'reports'
-                ? 'bg-slate-100 text-slate-900 font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-            }`}
-          >
-            <FileCheck2 className="w-3.5 h-3.5" />
-            <span>Laporan Distribusi ({reports.length})</span>
-          </button>
-        </div>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Total Donasi Masuk
-          </span>
-          <div className="text-2xl font-bold text-slate-900 font-mono">
-            {formatRupiah(totalDonationsPaid)}
-          </div>
-          <span className="text-[10px] text-slate-400">{paidDonations.length} donasi terverifikasi dari donatur</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Total Dana Dialokasikan
-          </span>
-          <div className="text-2xl font-bold text-indigo-700 font-mono">
-            {formatRupiah(totalAllocated)}
-          </div>
-          <span className="text-[10px] text-indigo-500">{allocations.length} alokasi penugasan relawan</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Dana Dikonfirmasi Kas Posko
-          </span>
-          <div className="text-2xl font-bold text-emerald-700 font-mono">
-            {formatRupiah(totalReceived)}
-          </div>
-          <span className="text-[10px] text-emerald-600">Siap / telah dibelanjakan logistik</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Laporan Distribusi
-          </span>
-          <div className="text-2xl font-bold text-amber-700 font-mono">
-            {reports.length}
-          </div>
-          <span className="text-[10px] text-amber-600">Terdokumentasi foto & berita acara</span>
-        </div>
-      </div>
-
-      {/* Donasi Masuk dari Donatur yang Siap Didistribusikan */}
-      {(activeTab === 'all' || activeTab === 'distribution') && paidDonations.length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden w-full">
-          <div className="p-6 border-b border-slate-100 flex flex-col gap-4 w-full">
-            <div className="w-full">
-              <h3 className="font-bold text-base text-slate-900 w-full">
-                Donasi Masuk Siap Didistribusikan
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 w-full">
-                Dana kontribusi donatur yang telah terverifikasi. Mitra dapat langsung memulai penyiapan logistik dan penyaluran lapangan.
-              </p>
-            </div>
-            <div className="w-full flex justify-end">
-              <span className="text-xs font-bold font-mono px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {paidDonations.length} Donasi Terkumpul
-              </span>
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {paidDonations.map((don) => {
-              const alreadyAllocated = allocations.some((a) => a.sourceDonationIds?.includes(don.id));
-              return (
-                <div
-                  key={don.id}
-                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-base font-bold text-slate-900">
-                        {formatRupiah(don.amount)}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Donasi Terverifikasi
-                      </span>
-                      {alreadyAllocated && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          Telah Masuk Penugasan
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                      <span>Donatur: <strong className="text-slate-700">{don.isAnonymous ? 'Hamba Allah' : don.donorName}</strong></span>
-                      <span>•</span>
-                      <span>Target: <strong className="text-slate-700">{don.disasterTitle || 'Tanggap Darurat'}</strong></span>
-                      <span>•</span>
-                      <span>{formatDateIndo(don.createdAt)}</span>
-                    </div>
-                    {don.message && (
-                      <p className="text-xs italic text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 max-w-xl">
-                        &quot;{don.message}&quot;
-                      </p>
-                    )}
-                  </div>
-
-                  {!alreadyAllocated ? (
-                    <span className="text-[10px] font-bold px-3 py-2 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0 text-right">
-                      Pencairan dikelola kolektif Admin
-                      <span className="block text-[9px] font-medium text-slate-400 mt-0.5">
-                        pantau penugasan di bawah
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Dalam Proses Penyaluran</span>
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Allocations Assigned to this Partner with Granular Stepper per task */}
-      {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'distribution') && (
-        <div className="space-y-4 w-full">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4 w-full">
-            <div className="w-full">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">
-                <ListTodo className="w-4 h-4" />
-                <span>Pelaksanaan Penyaluran Lapangan</span>
-              </div>
-              <h3 className="font-bold text-base text-slate-900 w-full">
-                Tugas Penyaluran & Checklist Progres Lapangan
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 w-full">
-                Perbarui setiap tahapan aktual secara real-time (dikemas, dalam perjalanan, tiba di posko, diserahkan ke warga). Donatur dan admin akan memantau progres Anda secara langsung.
-              </p>
-            </div>
-            <div className="w-full flex justify-end">
-              <span className="text-xs font-bold font-mono px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                {allocations.length} Tugas Alokasi
-              </span>
-            </div>
-          </div>
-
-          {allocations.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center space-y-3 shadow-sm">
-              <Building2 className="w-10 h-10 text-slate-300 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-700">Belum Ada Alokasi Dana Aktif</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Saat admin melakukan pencairan dana donasi dan menugaskannya kepada organisasi Anda, rinciannya akan tampil di sini.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {allocations.map((alloc) => (
-                <DistributionProgressCard
-                  key={alloc.id}
-                  allocation={alloc}
-                  mode="partner"
-                  actorEmail={staffSession?.email}
-                  actorName={staffSession?.name}
-                  onUpdated={onDataChanged}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Distribution Reports List */}
-      {(activeTab === 'all' || activeTab === 'reports' || activeTab === 'distribution') && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden w-full">
-          <div className="p-6 border-b border-slate-100 flex flex-col gap-4 w-full">
-            <h3 className="font-bold text-base text-slate-900 w-full">Laporan Penyaluran yang Telah Dibuat</h3>
-            <p className="text-xs text-slate-500 mt-0.5 w-full">
-              Laporan berstatus 'Submitted' langsung tampil pada pelacakan donatur untuk transparansi publik.
-            </p>
-          </div>
-
-          {reports.length === 0 ? (
-            <div className="p-10 text-center text-xs text-slate-400">
-              Belum ada laporan distribusi yang diunggah.
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {reports.map((rep) => (
-                <div key={rep.id} className="p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{rep.location}</span>
-                      </span>
+            <div className="flex gap-7 min-w-max">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => navigate(tab.path)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group relative inline-flex items-center gap-2 h-11 text-[13px] whitespace-nowrap cursor-pointer transition-colors duration-200 focus:outline-none focus-visible:text-slate-900 ${
+                      isActive
+                        ? 'text-slate-900 font-semibold'
+                        : 'text-slate-500 font-medium hover:text-slate-800'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && (
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                          rep.status === 'submitted' || rep.status === 'published'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-md text-[11px] font-medium tabular-nums transition-colors duration-200 ${
+                          isActive
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200/70'
                         }`}
                       >
-                        {rep.status === 'draft' ? 'Draft' : 'Submitted (Publik)'}
+                        {tab.count}
                       </span>
+                    )}
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full origin-left transition-transform duration-300 ${
+                        isActive
+                          ? 'bg-slate-900 scale-x-100'
+                          : 'bg-slate-300 scale-x-0 group-hover:scale-x-100'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </div>
+
+        {/* Metrics */}
+        <section aria-label="Ringkasan metrik" className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <div key={metric.label} className="rounded-xl border border-slate-200/80 bg-white p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[13px] font-medium text-slate-500 leading-snug">{metric.label}</span>
+                  <span
+                    className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center ${METRIC_TONES[metric.tone]}`}
+                    aria-hidden="true"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </span>
+                </div>
+                <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 tabular-nums break-words">
+                  {metric.value}
+                </div>
+                <p className="mt-1 text-xs text-slate-400 leading-snug">{metric.hint}</p>
+              </div>
+            );
+          })}
+        </section>
+
+        {/* Donasi Masuk dari Donatur yang Siap Didistribusikan */}
+        {(activeTab === 'all' || activeTab === 'distribution') && paidDonations.length > 0 && (
+          <section className="rounded-xl border border-slate-200/80 bg-white" aria-labelledby="donations-heading">
+            <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="donations-heading" className="text-base font-semibold text-slate-900">
+                  Donasi Masuk Siap Didistribusikan
+                </h2>
+                <p className="mt-1 text-[13px] text-slate-500 max-w-2xl leading-relaxed">
+                  Dana kontribusi donatur yang telah terverifikasi. Mitra dapat langsung memulai penyiapan logistik dan penyaluran lapangan.
+                </p>
+              </div>
+              <Pill tone="slate">{paidDonations.length} Donasi Terkumpul</Pill>
+            </div>
+
+            <ul className="divide-y divide-slate-100">
+              {paidDonations.map((don) => {
+                const alreadyAllocated = allocations.some((a) => a.sourceDonationIds?.includes(don.id));
+                return (
+                  <li
+                    key={don.id}
+                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6 transition-colors hover:bg-slate-50/60"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                        <span className="text-lg font-bold tracking-tight text-slate-900 tabular-nums">
+                          {formatRupiah(don.amount)}
+                        </span>
+                        <Pill tone="green" icon={CheckCircle2}>
+                          Terverifikasi
+                        </Pill>
+                      </div>
+
+                      <p className="text-[13px] text-slate-500 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                        <span className="font-medium text-slate-700">
+                          {don.isAnonymous ? 'Hamba Allah' : don.donorName}
+                        </span>
+                        <span aria-hidden="true" className="text-slate-300">
+                          ·
+                        </span>
+                        <span>{formatDateIndo(don.createdAt)}</span>
+                      </p>
+
+                      <p className="text-[13px] text-slate-500 flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 mt-[3px] shrink-0 text-slate-400" aria-hidden="true" />
+                        <span className="min-w-0">
+                          Target: <span className="text-slate-700">{don.disasterTitle || 'Tanggap Darurat'}</span>
+                        </span>
+                      </p>
+
+                      {don.message && (
+                        <p className="max-w-xl pt-0.5 text-xs italic text-slate-500 leading-relaxed line-clamp-2">
+                          &ldquo;{don.message}&rdquo;
+                        </p>
+                      )}
                     </div>
 
-                    <p className="text-xs text-slate-600">{rep.notes}</p>
+                    <div className="shrink-0">
+                      {alreadyAllocated ? (
+                        <Pill tone="blue" icon={Truck}>
+                          Dalam Penyaluran
+                        </Pill>
+                      ) : (
+                        <InfoTip
+                          id={`tip-${don.id}`}
+                          text="Pencairan dikelola kolektif Admin. Pantau penugasan pada bagian Tugas Penyaluran di bawah."
+                        >
+                          <Pill tone="slate" icon={Info}>
+                            Dikelola Admin
+                          </Pill>
+                        </InfoTip>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
-                    {/* Items summary */}
-                    {rep.items && rep.items.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {rep.items.map((it, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-medium"
-                          >
-                            {it.name}: {it.quantity} {it.unit}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => openEditReport(rep)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 shrink-0"
-                  >
-                    <Edit3 className="w-3 h-3 text-slate-500" />
-                    <span>Edit Laporan</span>
-                  </button>
-                </div>
-              ))}
+        {/* Allocations Assigned to this Partner */}
+        {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'distribution') && (
+          <section className="space-y-5" aria-labelledby="tasks-heading">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="tasks-heading" className="text-lg font-semibold tracking-tight text-slate-900">
+                  Tugas Penyaluran &amp; Checklist Progres Lapangan
+                </h2>
+                <p className="mt-1 text-[13px] text-slate-500 max-w-2xl leading-relaxed">
+                  Perbarui setiap tahapan aktual secara real-time (dikemas, dalam perjalanan, tiba di posko, diserahkan ke warga). Donatur dan admin akan memantau progres Anda secara langsung.
+                </p>
+              </div>
+              <Pill tone="slate">{allocations.length} Tugas Alokasi</Pill>
             </div>
-          )}
-        </div>
-      )}
+
+            {allocations.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
+                <div className="w-10 h-10 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-slate-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-slate-900">Belum Ada Alokasi Dana Aktif</h3>
+                <p className="mt-1.5 text-[13px] text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  Saat admin melakukan pencairan dana donasi dan menugaskannya kepada organisasi Anda, rinciannya akan tampil di sini.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allocations.map((alloc) => (
+                  <DistributionProgressCard
+                    key={alloc.id}
+                    allocation={alloc}
+                    mode="partner"
+                    actorEmail={staffSession?.email}
+                    actorName={staffSession?.name}
+                    onUpdated={onDataChanged}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Distribution Reports List */}
+        {(activeTab === 'all' || activeTab === 'reports' || activeTab === 'distribution') && (
+          <section className="rounded-xl border border-slate-200/80 bg-white" aria-labelledby="reports-heading">
+            <div className="px-6 py-5 border-b border-slate-100">
+              <h2 id="reports-heading" className="text-base font-semibold text-slate-900">
+                Laporan Penyaluran yang Telah Dibuat
+              </h2>
+              <p className="mt-1 text-[13px] text-slate-500 max-w-2xl leading-relaxed">
+                Laporan berstatus &apos;Submitted&apos; langsung tampil pada pelacakan donatur untuk transparansi publik.
+              </p>
+            </div>
+
+            {reports.length === 0 ? (
+              <div className="px-6 py-12 text-center text-[13px] text-slate-400">
+                Belum ada laporan distribusi yang diunggah.
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {reports.map((rep) => (
+                  <li
+                    key={rep.id}
+                    className="px-6 py-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4 transition-colors hover:bg-slate-50/60"
+                  >
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                        <span className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                          <span>{rep.location}</span>
+                        </span>
+                        <Pill tone={rep.status === 'submitted' || rep.status === 'published' ? 'green' : 'amber'}>
+                          {rep.status === 'draft' ? 'Draft' : 'Submitted (Publik)'}
+                        </Pill>
+                      </div>
+
+                      <p className="text-[13px] text-slate-600 leading-relaxed">{rep.notes}</p>
+
+                      {rep.items && rep.items.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {rep.items.map((it, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium"
+                            >
+                              {it.name}: {it.quantity} {it.unit}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => openEditReport(rep)}
+                      className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[13px] font-medium text-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Edit Laporan</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
       {/* Modal Buat / Edit Laporan Distribusi */}
       {showReportModal && (

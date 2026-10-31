@@ -2,21 +2,17 @@ import React, { useState } from 'react';
 import {
   Activity,
   CheckCircle2,
-  XCircle,
   Clock,
-  Sparkles,
   MapPin,
   RefreshCw,
   AlertTriangle,
-  Radio,
-  ExternalLink,
-  FastForward,
   Ban,
   RotateCcw,
   Save,
-  Users,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
-import { Disaster, Partner } from '../../types';
+import { Disaster, DisasterStatus, Partner } from '../../types';
 import {
   updateDisasterStatus,
   updateDisasterPartner,
@@ -24,7 +20,7 @@ import {
 } from '../../services/firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../../components/feedback/Toast';
-import { formatDateIndo } from '../../lib/utils';
+import { formatRelativeTime, formatShortDateIndo } from '../../lib/utils';
 
 interface BMKGVerificationCardProps {
   disasters: Disaster[];
@@ -34,6 +30,84 @@ interface BMKGVerificationCardProps {
 }
 
 const PUBLIC_STATUSES = ['admin_approved', 'auto_approved', 'published', 'archived'];
+
+type FilterId = 'all' | 'pending' | 'approved';
+type StatusTone = 'pending' | 'approved' | 'closed' | 'rejected';
+
+const STATUS_TONE_CLASSES: Record<StatusTone, { badge: string; dot: string }> = {
+  pending: { badge: 'bg-amber-50 text-amber-700 ring-amber-200/70', dot: 'bg-amber-400' },
+  approved: { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200/70', dot: 'bg-emerald-500' },
+  closed: { badge: 'bg-slate-100 text-slate-600 ring-slate-200', dot: 'bg-slate-400' },
+  rejected: { badge: 'bg-rose-50 text-rose-700 ring-rose-200/70', dot: 'bg-rose-500' },
+};
+
+const getStatusMeta = (status: DisasterStatus): { label: string; tone: StatusTone } => {
+  switch (status) {
+    case 'pending_verification':
+      return { label: 'Pending Verification', tone: 'pending' };
+    case 'admin_approved':
+      return { label: 'Admin Approved', tone: 'approved' };
+    case 'auto_approved':
+      return { label: 'Auto Approved (24h)', tone: 'approved' };
+    case 'published':
+      return { label: 'Published', tone: 'approved' };
+    case 'archived':
+      return { label: 'Ditutup', tone: 'closed' };
+    case 'rejected':
+      return { label: 'Ditolak', tone: 'rejected' };
+    default:
+      return { label: status, tone: 'closed' };
+  }
+};
+
+interface PartnerSelectProps {
+  id: string;
+  value: string;
+  options: Partner[];
+  placeholder: string;
+  disabled?: boolean;
+  invalid?: boolean;
+  onChange: (value: string) => void;
+}
+
+const PartnerSelect: React.FC<PartnerSelectProps> = ({
+  id,
+  value,
+  options,
+  placeholder,
+  disabled,
+  invalid,
+  onChange,
+}) => (
+  <div className="relative">
+    <select
+      id={id}
+      value={value}
+      disabled={disabled}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${id}-error` : undefined}
+      onChange={(e) => onChange(e.target.value)}
+      className={`h-9 w-full appearance-none rounded-lg border bg-white pl-3 pr-9 text-[13px] text-slate-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 ${
+        invalid
+          ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-500/15'
+          : 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-900/10'
+      }`}
+    >
+      <option value="" disabled>
+        {placeholder}
+      </option>
+      {options.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+        </option>
+      ))}
+    </select>
+    <ChevronDown
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+      aria-hidden="true"
+    />
+  </div>
+);
 
 export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
   disasters,
@@ -45,8 +119,22 @@ export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
   const { showToast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
+  const [filter, setFilter] = useState<FilterId>('all');
   const [selectedPartners, setSelectedPartners] = useState<Record<string, string>>({});
+  const [partnerErrors, setPartnerErrors] = useState<Record<string, boolean>>({});
+
+  const selectPartner = (disasterId: string, partnerId: string) => {
+    setSelectedPartners((prev) => ({ ...prev, [disasterId]: partnerId }));
+    setPartnerErrors((prev) => ({ ...prev, [disasterId]: false }));
+  };
+
+  const requestApprove = (disaster: Disaster) => {
+    if (!selectedPartners[disaster.id]) {
+      setPartnerErrors((prev) => ({ ...prev, [disaster.id]: true }));
+      return;
+    }
+    handleApprove(disaster);
+  };
 
   const filtered = disasters.filter((d) => {
     if (filter === 'pending') return d.status === 'pending_verification';
@@ -245,83 +333,110 @@ export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
     }
   };
 
+  const statusCounts = {
+    all: disasters.length,
+    pending: disasters.filter((d) => d.status === 'pending_verification').length,
+    approved: disasters.filter((d) => PUBLIC_STATUSES.includes(d.status)).length,
+  };
+
+  const filterTabs: { id: FilterId; label: string; count: number }[] = [
+    { id: 'all', label: 'Semua', count: statusCounts.all },
+    { id: 'pending', label: 'Menunggu', count: statusCounts.pending },
+    { id: 'approved', label: 'Terverifikasi', count: statusCounts.approved },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header and Controls */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#1B3322] uppercase tracking-wider mb-1">
-            <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
-            <span>Pusat Verifikasi Data Bencana BMKG</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900">Verifikasi & Sinkronisasi Bencana</h2>
-          <p className="text-xs text-slate-500 mt-0.5 max-w-xl leading-relaxed">
-            Data BMKG masuk ke panel admin dalam status <strong>Pending Verification</strong>. Data hanya muncul di Dashboard User setelah disetujui Admin dengan penunjukan Mitra Lapangan.
+    <div className="space-y-8">
+      {/* Page header */}
+      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pusat Verifikasi</h1>
+          <p className="mt-1.5 text-sm text-slate-500 max-w-2xl leading-relaxed">
+            Data gempa BMKG masuk dengan status{' '}
+            <span className="font-medium text-slate-700">Pending Verification</span>. Data baru tampil di Dashboard
+            User setelah disetujui Admin dengan penunjukan Mitra Lapangan.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Perbarui Data BMKG Button (admin) */}
-          <button
-            onClick={handleManualRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-slate-200 hover:border-slate-300 text-xs font-semibold text-slate-700 bg-white transition-all shadow-sm"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>Tarik Data BMKG</span>
-          </button>
+        <button
+          onClick={handleManualRefresh}
+          disabled={refreshing}
+          aria-busy={refreshing}
+          className="shrink-0 self-start inline-flex items-center gap-2 h-9 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-[13px] font-medium text-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>{refreshing ? 'Menarik data…' : 'Tarik Data BMKG'}</span>
+        </button>
+      </header>
+
+      {/* Filter: iOS-style segmented control */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div
+          role="tablist"
+          aria-label="Filter status bencana"
+          className="inline-flex max-w-full overflow-x-auto p-1 rounded-lg bg-slate-100"
+        >
+          {filterTabs.map((tab) => {
+            const isActive = filter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(tab.id)}
+                className={`inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[13px] whitespace-nowrap transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15 ${
+                  isActive
+                    ? 'bg-white text-slate-900 font-semibold shadow-sm ring-1 ring-black/5'
+                    : 'text-slate-500 font-medium hover:text-slate-900'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`text-xs tabular-nums ${isActive ? 'text-slate-500' : 'text-slate-400'}`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
+
+        <p className="text-xs text-slate-400" aria-live="polite">
+          Menampilkan {filtered.length} dari {disasters.length} data
+        </p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
-        {[
-          { id: 'all', label: `Semua (${disasters.length})` },
-          {
-            id: 'pending',
-            label: `Menunggu Verifikasi (${disasters.filter((d) => d.status === 'pending_verification').length})`,
-          },
-          {
-            id: 'approved',
-            label: `Terverifikasi Publik (${
-              disasters.filter((d) => PUBLIC_STATUSES.includes(d.status)).length
-            })`,
-          },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id as any)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-              filter === tab.id
-                ? 'bg-[#0C8F63] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Disasters List */}
+      {/* Disasters list */}
       {filtered.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center space-y-3">
-          <Activity className="w-10 h-10 text-slate-300 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-700">Belum Ada Data Bencana di Kategori Ini</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Klik tombol "Tarik Data BMKG" di atas untuk mengambil data gempa terkini langsung dari BMKG ke antrean admin.
+        <div className="rounded-xl border border-dashed border-slate-200 px-6 py-16 text-center">
+          <div className="w-10 h-10 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+            <Activity className="w-5 h-5 text-slate-400" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            {filter === 'pending'
+              ? 'Tidak ada data yang menunggu verifikasi'
+              : filter === 'approved'
+              ? 'Belum ada bencana terverifikasi'
+              : 'Belum ada data bencana'}
+          </h3>
+          <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+            Klik &quot;Tarik Data BMKG&quot; untuk mengambil data gempa terkini langsung dari BMKG ke antrean admin.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 min-[1760px]:grid-cols-3 gap-4">
           {filtered.map((disaster) => {
             const isPending = disaster.status === 'pending_verification';
             const isArchived = disaster.status === 'archived';
             const isApproved = PUBLIC_STATUSES.includes(disaster.status);
             const isProcessing = processingId === disaster.id;
+            const statusMeta = getStatusMeta(disaster.status);
             const assignedPartner = partners.find((p) => p.id === disaster.partnerId);
+            const activePartners = partners.filter((p) => p.status === 'active');
             const partnerOptions = partners.filter(
               (p) => p.status === 'active' || p.id === disaster.partnerId
             );
+            const pendingPartnerValue = selectedPartners[disaster.id] || '';
             const editPartnerValue = selectedPartners[disaster.id] ?? disaster.partnerId ?? '';
             const canSavePartner =
               isApproved &&
@@ -333,189 +448,180 @@ export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
             const remainingHours = Math.max(0, 24 - ageHours);
 
             return (
-              <div
+              <article
                 key={disaster.id}
-                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow"
+                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-slate-300"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-extrabold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
+                {/* Information area */}
+                <div className="flex-1 p-5">
+                  {/* Badges row: magnitude + status */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-flex items-center h-6 px-2 shrink-0 whitespace-nowrap rounded-md bg-slate-900 text-white text-xs font-semibold tabular-nums">
                         {disaster.magnitude} SR
                       </span>
-                      <span className="text-xs text-slate-400 font-mono">Kedalaman {disaster.depth}</span>
+                      <span className="text-xs text-slate-500 truncate">Kedalaman {disaster.depth}</span>
                     </div>
-                    <h3 className="font-bold text-slate-900 text-sm leading-snug">{disaster.title}</h3>
+
+                    <span
+                      className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold shrink-0 ring-1 ring-inset ${STATUS_TONE_CLASSES[statusMeta.tone].badge}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${STATUS_TONE_CLASSES[statusMeta.tone].dot}`} />
+                      {statusMeta.label}
+                    </span>
                   </div>
 
-                  {/* Status Badge */}
-                  <span
-                    className={`text-[10px] font-bold px-3 py-1 rounded-full shrink-0 ${
-                      isPending
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : isArchived
-                        ? 'bg-slate-100 text-slate-600 border border-slate-300'
-                        : isApproved
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : 'bg-rose-50 text-rose-800 border border-rose-100'
-                    }`}
-                  >
-                    {isPending
-                      ? 'Pending Verification'
-                      : isArchived
-                      ? 'Penggalangan Ditutup'
-                      : disaster.status === 'auto_approved'
-                      ? 'Auto Approved (24h)'
-                      : disaster.status === 'admin_approved'
-                      ? 'Admin Approved'
-                      : disaster.status}
-                  </span>
-                </div>
+                  {/* Title */}
+                  <h3 className="mt-4 text-[15px] font-semibold text-slate-900 leading-snug">
+                    {disaster.title}
+                  </h3>
 
-                {/* Location & Time info */}
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex items-start gap-2 text-slate-600" title={`Koordinat: ${disaster.coordinates?.latitude}, ${disaster.coordinates?.longitude}`}>
-                    <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                    <span className="leading-tight font-medium text-slate-800">{disaster.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-500" title={`Waktu asli: ${disaster.eventTime}`}>
-                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>{ageHours < 1 ? `${Math.round(ageHours * 60)} menit lalu` : `${Math.floor(ageHours)} jam lalu`}</span>
-                  </div>
+                  {/* Location & time */}
+                  <dl className="mt-3 space-y-1.5 text-[13px]">
+                    <div
+                      className="flex items-start gap-2 text-slate-600"
+                      title={`Koordinat: ${disaster.coordinates?.latitude}, ${disaster.coordinates?.longitude}`}
+                    >
+                      <dt className="sr-only">Lokasi</dt>
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-[3px]" aria-hidden="true" />
+                      <dd className="leading-snug">{disaster.location}</dd>
+                    </div>
+                    <div
+                      className="flex items-center gap-2 text-slate-500"
+                      title={`Waktu kejadian: ${disaster.eventTime}`}
+                    >
+                      <dt className="sr-only">Waktu kejadian</dt>
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
+                      <dd>
+                        {formatRelativeTime(disaster.eventTime)}
+                        <span className="text-slate-300"> · </span>
+                        {formatShortDateIndo(disaster.eventTime)}
+                      </dd>
+                    </div>
+                  </dl>
 
-                  {/* Status Info (tanpa kotak background) */}
-                  <div className="pt-3 flex flex-col gap-1 text-xs">
+                  {/* Publication status */}
+                  <p className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_TONE_CLASSES[statusMeta.tone].dot}`}
+                      aria-hidden="true"
+                    />
                     {isPending ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-orange-400/80 font-medium">Batas auto-approve:</span>
-                        <span className="font-semibold text-orange-500/90">
-                          {remainingHours > 0 ? `Sisa ${remainingHours.toFixed(1)} jam` : 'Siap Auto-Approve'}
+                      remainingHours > 0 ? (
+                        <span>
+                          Auto-approve dalam{' '}
+                          <span className="font-medium text-slate-700">{remainingHours.toFixed(1)} jam</span>
                         </span>
-                      </div>
+                      ) : (
+                        <span className="font-medium text-slate-700">Siap auto-approve</span>
+                      )
                     ) : isArchived ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium">Status di User:</span>
-                        <span className="font-semibold text-slate-500">Penggalangan Ditutup — Tidak Tampil</span>
-                      </div>
+                      <span>Penggalangan ditutup — tidak tampil di Dashboard User</span>
+                    ) : isApproved ? (
+                      <span>
+                        Tampil di <span className="font-medium text-slate-700">Dashboard User</span>
+                      </span>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium">Status di User:</span>
-                        <span className="font-semibold text-slate-900">Tampil di Dashboard User</span>
-                      </div>
+                      <span>Ditolak — tidak tampil di Dashboard User</span>
                     )}
-                  </div>
+                  </p>
 
                   {disaster.notes && (
-                    <div className="pt-1 text-xs text-slate-500 italic">
-                      Catatan: {disaster.notes}
-                    </div>
+                    <p className="mt-2 text-xs text-slate-500 leading-relaxed">Catatan: {disaster.notes}</p>
                   )}
                 </div>
 
-                {/* Admin Actions */}
+                {/* Action area: pending verification */}
                 {isPending && (
-                  <div className="pt-4 mt-2 border-t border-slate-100 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <select
-                        className="flex-1 text-sm font-semibold text-slate-900 bg-transparent border-b border-slate-300 pb-1 focus:outline-none focus:border-slate-900 appearance-none cursor-pointer"
-                        value={selectedPartners[disaster.id] || ''}
-                        onChange={(e) => setSelectedPartners(prev => ({ ...prev, [disaster.id]: e.target.value }))}
+                  <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-4">
+                    <div>
+                      <label
+                        htmlFor={`partner-${disaster.id}`}
+                        className="mb-1.5 block text-xs font-medium text-slate-600"
                       >
-                        <option value="" disabled>Pilih Mitra Lapangan +</option>
-                        {partners.filter(p => p.status === 'active').map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
+                        Mitra Lapangan <span className="font-normal text-slate-400">(wajib dipilih)</span>
+                      </label>
+                      <PartnerSelect
+                        id={`partner-${disaster.id}`}
+                        value={pendingPartnerValue}
+                        options={activePartners}
+                        placeholder="Pilih mitra lapangan"
+                        disabled={isProcessing}
+                        invalid={Boolean(partnerErrors[disaster.id])}
+                        onChange={(value) => selectPartner(disaster.id, value)}
+                      />
+                      {partnerErrors[disaster.id] && (
+                        <p id={`partner-${disaster.id}-error`} role="alert" className="mt-1.5 text-xs text-rose-600">
+                          Pilih mitra lapangan terlebih dahulu sebelum menyetujui.
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleApprove(disaster)}
-                        disabled={isProcessing || !selectedPartners[disaster.id]}
-                        className="flex-1 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+                        onClick={() => requestApprove(disaster)}
+                        disabled={isProcessing}
+                        className="flex-1 inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:ring-offset-1"
                       >
-                        <CheckCircle2 className="w-4 h-4" />
+                        {isProcessing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4" />
+                        )}
                         <span>Approve Manual</span>
                       </button>
 
                       <button
                         onClick={() => handleReject(disaster)}
                         disabled={isProcessing}
-                        className="py-2.5 px-4 rounded-xl bg-transparent hover:bg-slate-100 text-slate-500 hover:text-slate-900 text-xs font-bold transition-all"
+                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30"
                       >
                         Tolak
                       </button>
                     </div>
+
+
                   </div>
                 )}
 
-                {/* Approved / Closed: Partner info, partner edit, close-reopen controls */}
+                {/* Action area: approved / closed */}
                 {isApproved && (
-                  <div className="pt-4 mt-2 border-t border-slate-100 space-y-4">
-                    {assignedPartner ? (
-                      <div className="flex items-center gap-3">
-                        {assignedPartner.logo ? (
-                          <img
-                            src={assignedPartner.logo}
-                            alt={assignedPartner.name}
-                            className="w-10 h-10 rounded-full object-cover bg-slate-50 border border-slate-200 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-sm font-extrabold shrink-0 border border-slate-200">
-                            {assignedPartner.name.charAt(0).toUpperCase()}
+                  <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                      {assignedPartner ? (
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {assignedPartner.logo ? (
+                            <img
+                              src={assignedPartner.logo}
+                              alt={assignedPartner.name}
+                              className="w-8 h-8 rounded-full object-cover bg-white border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-white text-slate-700 flex items-center justify-center text-xs font-semibold shrink-0 border border-slate-200">
+                              {assignedPartner.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-slate-900 truncate">
+                              {assignedPartner.name}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {assignedPartner.organization || assignedPartner.location || 'Mitra Lapangan'}
+                            </p>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-900 truncate">
-                            {assignedPartner.name}
-                          </p>
-                          <p className="text-xs text-slate-500 truncate">
-                            {assignedPartner.organization || assignedPartner.location || 'Mitra Lapangan'}
-                          </p>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-xs font-medium text-orange-500/90">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>Belum ada mitra — pilih mitra di bawah lalu simpan.</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                      <select
-                        className="flex-1 text-sm font-semibold text-slate-900 bg-transparent border-b border-slate-300 pb-1 focus:outline-none focus:border-slate-900 appearance-none cursor-pointer"
-                        value={editPartnerValue}
-                        onChange={(e) =>
-                          setSelectedPartners((prev) => ({ ...prev, [disaster.id]: e.target.value }))
-                        }
-                        disabled={isProcessing}
-                      >
-                        <option value="" disabled>
-                          Ubah Mitra Lapangan +
-                        </option>
-                        {partnerOptions.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => handleUpdatePartner(disaster)}
-                        disabled={isProcessing || !canSavePartner}
-                        className="flex-1 py-2 px-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        <span>Simpan Mitra</span>
-                      </button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>Belum ada mitra — pilih mitra lalu simpan.</span>
+                        </div>
+                      )}
 
                       {isArchived ? (
                         <button
                           onClick={() => handleReopenFundraising(disaster)}
                           disabled={isProcessing}
-                          className="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                          className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Buka Kembali</span>
@@ -524,16 +630,50 @@ export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
                         <button
                           onClick={() => handleCloseFundraising(disaster)}
                           disabled={isProcessing}
-                          className="flex-1 py-2 px-3 rounded-xl bg-transparent hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                          className="shrink-0 inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30"
                         >
                           <Ban className="w-3.5 h-3.5" />
                           <span>Tutup Penggalangan</span>
                         </button>
                       )}
                     </div>
+
+                    <div>
+                      <label
+                        htmlFor={`partner-${disaster.id}`}
+                        className="mb-1.5 block text-xs font-medium text-slate-600"
+                      >
+                        Ubah mitra lapangan
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <PartnerSelect
+                            id={`partner-${disaster.id}`}
+                            value={editPartnerValue}
+                            options={partnerOptions}
+                            placeholder="Pilih mitra lapangan"
+                            disabled={isProcessing}
+                            onChange={(value) => selectPartner(disaster.id, value)}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleUpdatePartner(disaster)}
+                          disabled={isProcessing || !canSavePartner}
+                          title={canSavePartner ? undefined : 'Pilih mitra lain untuk menyimpan perubahan'}
+                          className="shrink-0 inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-semibold transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:ring-offset-1"
+                        >
+                          {isProcessing ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Save className="w-3.5 h-3.5" />
+                          )}
+                          <span>Simpan</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </div>
+              </article>
             );
           })}
         </div>

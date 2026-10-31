@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Heart,
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
@@ -102,9 +101,7 @@ export const TransactionStatusPage: React.FC = () => {
             onClick={() => navigate('/')}
             className="flex items-center gap-2 cursor-pointer select-none"
           >
-            <div className="w-7 h-7 rounded-full bg-[#1B3322] flex items-center justify-center text-[#0C8F63] shadow-xs">
-              <Heart className="w-3.5 h-3.5 fill-current" />
-            </div>
+            <img src="/assets/images/logo.svg" alt="Logo Bersama Kita" className="w-7 h-7" />
             <span className="font-extrabold text-sm text-[#1B3322]">Bersama Kita</span>
           </div>
 

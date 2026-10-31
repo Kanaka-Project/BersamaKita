@@ -116,9 +116,7 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
           <span>Kembali ke Dashboard</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-[#1B3322] flex items-center justify-center text-[#0C8F63]">
-            <Heart className="w-3.5 h-3.5 fill-current" />
-          </div>
+          <img src="/assets/images/logo.svg" alt="Logo Bersama Kita" className="w-7 h-7" />
           <span className="font-extrabold text-sm text-[#1B3322]">Bersama Kita</span>
         </div>
       </header>
@@ -320,9 +318,7 @@ export const TransactionDonatePage: React.FC<TransactionDonatePageProps> = ({
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#1B3322] flex items-center justify-center text-[#0C8F63] shadow-xs">
-              <Heart className="w-3.5 h-3.5 fill-current" />
-            </div>
+            <img src="/assets/images/logo.svg" alt="Logo Bersama Kita" className="w-7 h-7" />
             <span className="font-extrabold text-sm text-[#1B3322]">Bersama Kita</span>
           </div>
         </div>

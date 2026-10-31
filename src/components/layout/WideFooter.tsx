@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Activity, ShieldCheck, Database, Lock, Building2 } from 'lucide-react';
+import { Activity, ShieldCheck, Database, Lock, Building2 } from 'lucide-react';
 
 export const WideFooter: React.FC = () => {
   const navigate = useNavigate();
@@ -12,8 +12,8 @@ export const WideFooter: React.FC = () => {
           {/* Column 1: Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#1B3322] flex items-center justify-center text-[#0C8F63] shadow-sm">
-                <Heart className="w-4 h-4 fill-current" />
+              <div className="w-8 h-8 flex items-center justify-center shadow-sm">
+                <img src="/assets/images/logo.svg" alt="Logo" className="w-8 h-8" />
               </div>
               <span className="font-extrabold text-base tracking-tight text-white">
                 Bersama Kita

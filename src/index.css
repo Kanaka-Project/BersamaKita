@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+/* Admin panel typeface (font is loaded in index.html). Scoped so public pages are unchanged. */
+.font-admin {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
