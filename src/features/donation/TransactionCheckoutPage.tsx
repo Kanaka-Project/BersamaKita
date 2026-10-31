@@ -382,28 +382,6 @@ export const TransactionCheckoutPage: React.FC<TransactionCheckoutPageProps> = (
                 <span className="text-xs text-slate-600">Sudah melakukan pembayaran?</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isSandbox) {
-                      handleSimulatePaid();
-                    } else if (payment?.paymentUrl) {
-                      window.open(payment.paymentUrl, '_blank', 'noopener,noreferrer');
-                    } else {
-                      handleCheckStatus();
-                    }
-                  }}
-                  disabled={checkingStatus}
-                  className="w-full max-w-xs py-3 rounded-xl bg-[#0C8F63] hover:bg-emerald-700 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-60"
-                >
-                  {checkingStatus ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  <span>Selesaikan Pembayaran</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={handleCheckStatus}
                   disabled={checkingStatus}
                   className="w-full max-w-xs py-3 rounded-xl border border-emerald-600 text-emerald-700 font-extrabold text-xs transition-all flex items-center justify-center gap-2 hover:bg-emerald-50 disabled:opacity-60"
