@@ -363,6 +363,7 @@ export const TransactionCheckoutPage: React.FC<TransactionCheckoutPageProps> = (
               <hr className="border-slate-100" />
 
               <div className="flex flex-col items-center gap-3">
+                <span className="text-xs text-slate-600">Sudah melakukan pembayaran?</span>
                 {isSandbox && (
                   <button
                     type="button"
@@ -375,11 +376,9 @@ export const TransactionCheckoutPage: React.FC<TransactionCheckoutPageProps> = (
                     ) : (
                       <CheckCircle2 className="w-4 h-4" />
                     )}
-                    <span>Bayar Sekarang (Simulasi Sandbox)</span>
+                    <span>Selesaikan Pembayaran (Simulasi)</span>
                   </button>
                 )}
-
-                <span className="text-xs text-slate-600">Sudah melakukan pembayaran?</span>
                 <button
                   type="button"
                   onClick={handleCheckStatus}
