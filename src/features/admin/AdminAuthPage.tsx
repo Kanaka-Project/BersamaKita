@@ -16,8 +16,8 @@ export const AdminAuthPage: React.FC = () => {
   const { isAdminAuthenticated, loginStaff } = useAuth();
   const { showToast } = useToast();
 
-  const [email, setEmail] = useState<string>('bersamakita.my.id@protonmail.com');
-  const [password, setPassword] = useState<string>('bersamakita01');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState(0);

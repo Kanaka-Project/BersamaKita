@@ -35,7 +35,6 @@ interface AuthContextType {
   isPartnerAuthenticated: boolean;
   loginStaff: (email: string, pass: string) => Promise<{ role: 'admin' | 'partner' }>;
   logoutStaff: () => void;
-  quickFillCredential: (type: 'admin' | 'partner') => { email: string; pass: string };
 
   // Common helpers
   role: UserRole;
@@ -274,20 +273,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     safeRemove(STAFF_SESSION_KEY);
   };
 
-  const quickFillCredential = (type: 'admin' | 'partner') => {
-    if (type === 'admin') {
-      return {
-        email: 'bersamakita.my.id@protonmail.com',
-        pass: 'bersamakita01',
-      };
-    } else {
-      return {
-        email: 'partnerbersamakita@protonmail.com',
-        pass: 'bersamakita01',
-      };
-    }
-  };
-
   const switchRole = async (newRole: UserRole) => {
     if (!user || !profile) return;
     const updated = await syncUserProfile(user, newRole);
@@ -319,7 +304,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isPartnerAuthenticated,
         loginStaff,
         logoutStaff,
-        quickFillCredential,
 
         role,
         loading,
