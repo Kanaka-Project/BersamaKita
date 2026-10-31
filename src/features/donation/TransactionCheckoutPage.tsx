@@ -312,18 +312,7 @@ export const TransactionCheckoutPage: React.FC<TransactionCheckoutPageProps> = (
           {/* Payment Method UI Details */}
           {!isExpired ? (
             <div className="text-center space-y-6 pt-2">
-              {isSandbox ? (
-                // Sandbox: no QRIS, just simulation
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 text-[#1B3322] font-bold">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Mode Sandbox (Simulasi)</span>
-                  </div>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Pembayaran disimulasikan. Klik tombol di bawah untuk menyelesaikan pembayaran dan mencatatnya sebagai lunas di database.
-                  </p>
-                </div>
-              ) : payment.qrString ? (
+              {payment.qrString ? (
                 // QRIS rendering
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 text-[#1B3322] font-bold">
