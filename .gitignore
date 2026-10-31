@@ -31,3 +31,6 @@ Thumbs.db
 # Temporary
 tmp/
 temp/
+firebase-blueprint.json
+firebase-applet-config.json
+backup/
