@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../../components/feedback/Toast';
 import { formatRupiah } from '../../lib/utils';
+import { MIN_DONATION, MAX_DONATION } from '../../lib/fees';
 import { paymentService } from '../../services/duitku';
 import {
   createDonation,
@@ -70,15 +71,21 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^0-9]/g, '');
-    setCustomAmountStr(raw);
-    setIsCustom(true);
-    const parsed = parseInt(raw, 10);
-    setAmount(isNaN(parsed) ? 0 : parsed);
+    if (raw.length <= 8) {
+      setCustomAmountStr(raw);
+      setIsCustom(true);
+      const parsed = parseInt(raw, 10);
+      setAmount(isNaN(parsed) ? 0 : parsed);
+    }
   };
 
   const proceedToVerify = () => {
-    if (amount < 10000) {
-      showToast('Nominal donasi minimal Rp10.000', 'warning');
+    if (amount < MIN_DONATION) {
+      showToast(`Nominal donasi minimal ${formatRupiah(MIN_DONATION)}`, 'warning');
+      return;
+    }
+    if (amount > MAX_DONATION) {
+      showToast(`Nominal donasi maksimal ${formatRupiah(MAX_DONATION)}`, 'warning');
       return;
     }
     setStep('verify');
@@ -277,13 +284,13 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             {/* Quick Amount Selection */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-2">Pilih Nominal</label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {PRESET_AMOUNTS.map((val) => (
                   <button
                     key={val}
                     type="button"
                     onClick={() => handleSelectAmount(val)}
-                    className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all ${
+                    className={`py-2.5 px-2 rounded-2xl text-xs font-bold border transition-all truncate ${
                       amount === val && !isCustom
                         ? 'bg-[#1B3322] text-[#0C8F63] border-[#1B3322] shadow-sm'
                         : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
@@ -297,19 +304,38 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
             {/* Custom Amount */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Atau Masukkan Nominal Lainnya
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Atau Masukkan Nominal Lainnya
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  Min. {formatRupiah(MIN_DONATION)} • Maks. {formatRupiah(MAX_DONATION)}
+                </span>
+              </div>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-sm font-bold text-slate-400">Rp</span>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={customAmountStr}
                   onChange={handleCustomAmountChange}
-                  placeholder="Min. 10.000"
-                  className="w-full pl-12 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0C8F63] text-sm font-semibold text-slate-800"
+                  placeholder="Contoh: 150000"
+                  className={`w-full pl-12 pr-4 py-2.5 rounded-2xl border text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 transition-colors ${
+                    isCustom && (amount < MIN_DONATION || amount > MAX_DONATION)
+                      ? 'border-red-400 focus:ring-red-400 bg-red-50/20'
+                      : 'border-slate-200 focus:ring-[#0C8F63]'
+                  }`}
                 />
               </div>
+              {isCustom && (amount < MIN_DONATION || amount > MAX_DONATION) && (
+                <p className="text-[11px] text-red-600 mt-1 flex items-center gap-1">
+                  <span>
+                    {amount < MIN_DONATION
+                      ? `Nominal minimal adalah ${formatRupiah(MIN_DONATION)}`
+                      : `Nominal maksimal per transaksi adalah ${formatRupiah(MAX_DONATION)}`}
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Associated Disaster (Optional) */}
@@ -394,29 +420,29 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
             {/* Summary Box */}
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
-              <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Nominal Donasi</span>
-                <span className="font-bold text-slate-900 text-sm font-mono">{formatRupiah(amount)}</span>
+              <div className="flex justify-between items-center gap-2 py-1">
+                <span className="text-slate-500 shrink-0">Nominal Donasi</span>
+                <span className="font-bold text-slate-900 text-sm font-mono truncate text-right">{formatRupiah(amount)}</span>
               </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Biaya Pembayaran</span>
-                <span className="font-medium text-emerald-600">Rp0 (Ditanggung)</span>
+              <div className="flex justify-between items-center gap-2 py-1">
+                <span className="text-slate-500 shrink-0">Biaya Pembayaran</span>
+                <span className="font-medium text-emerald-600 text-right">Rp0 (Ditanggung)</span>
               </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Nama Donatur</span>
-                <span className="font-semibold text-slate-800">{isAnonymous ? 'Hamba Allah (Anonim)' : donorName}</span>
+              <div className="flex justify-between items-center gap-2 py-1">
+                <span className="text-slate-500 shrink-0">Nama Donatur</span>
+                <span className="font-semibold text-slate-800 truncate text-right">{isAnonymous ? 'Hamba Allah (Anonim)' : donorName}</span>
               </div>
               {disasterId && (
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Bencana Terkait</span>
-                  <span className="font-semibold text-slate-800 truncate max-w-[200px]">
+                <div className="flex justify-between items-center gap-2 py-1">
+                  <span className="text-slate-500 shrink-0">Bencana Terkait</span>
+                  <span className="font-semibold text-slate-800 truncate max-w-[200px] text-right">
                     {disasters.find((d) => d.id === disasterId)?.title}
                   </span>
                 </div>
               )}
-              <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
-                <span className="font-bold text-slate-900">Total Pembayaran</span>
-                <span className="font-extrabold text-[#1B3322] text-base font-mono">
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center gap-2 text-sm">
+                <span className="font-bold text-slate-900 shrink-0">Total Pembayaran</span>
+                <span className="font-extrabold text-[#1B3322] text-base font-mono truncate text-right">
                   {formatRupiah(amount)}
                 </span>
               </div>
@@ -498,9 +524,9 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex justify-between text-xs px-2">
-                <span className="text-slate-500">Total Tagihan:</span>
-                <span className="font-mono font-bold text-slate-900 text-sm">
+              <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline gap-2 text-xs px-2">
+                <span className="text-slate-500 shrink-0">Total Tagihan:</span>
+                <span className="font-mono font-bold text-slate-900 text-sm truncate text-right">
                   {formatRupiah(currentPayment.amount)}
                 </span>
               </div>

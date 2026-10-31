@@ -198,9 +198,9 @@ export const TransactionStatusPage: React.FC = () => {
 
           {/* Receipt Breakdown Card */}
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-left space-y-3 text-xs">
-            <div className="flex justify-between items-baseline border-b border-slate-200/60 pb-2">
-              <span className="text-slate-400 text-[11px]">Nominal Donasi:</span>
-              <span className="font-mono text-xl font-extrabold text-slate-900">
+            <div className="flex justify-between items-baseline border-b border-slate-200/60 pb-2 gap-2">
+              <span className="text-slate-400 text-[11px] shrink-0">Nominal Donasi:</span>
+              <span className="font-mono text-xl font-extrabold text-slate-900 truncate text-right">
                 {donation ? formatRupiah(donation.amount) : 'Rp 0'}
               </span>
             </div>

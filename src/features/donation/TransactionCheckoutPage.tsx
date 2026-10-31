@@ -270,21 +270,21 @@ export const TransactionCheckoutPage: React.FC<TransactionCheckoutPageProps> = (
         {/* Payment Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-100">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                 Total Dibayar (Donasi + Biaya Admin)
               </span>
-              <div className="text-3xl font-extrabold font-mono text-slate-900 mt-0.5">
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 mt-0.5 truncate">
                 {formatRupiah(donation.amount + (payment.fee ?? 0))}
               </div>
               <div className="mt-2 space-y-1 text-xs font-mono text-slate-600">
-                <div className="flex justify-between gap-6">
-                  <span>Donasi</span>
-                  <span className="font-bold text-slate-900">{formatRupiah(donation.amount)}</span>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="shrink-0">Donasi</span>
+                  <span className="font-bold text-slate-900 truncate text-right">{formatRupiah(donation.amount)}</span>
                 </div>
-                <div className="flex justify-between gap-6">
-                  <span>Biaya Admin 0,17%</span>
-                  <span className="font-bold text-amber-600">{formatRupiah(payment.fee ?? 0)}</span>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="shrink-0">Biaya Admin 0,17%</span>
+                  <span className="font-bold text-amber-600 truncate text-right">{formatRupiah(payment.fee ?? 0)}</span>
                 </div>
               </div>
               <div className="text-xs text-slate-500 font-mono mt-1.5 flex items-center gap-1.5">
