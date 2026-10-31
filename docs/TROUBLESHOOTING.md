@@ -1,0 +1,99 @@
+# Troubleshooting & Error Logs
+
+This document tracks significant bugs, structural errors, and critical lessons learned during the development of the Bersama Kita platform. 
+
+Future developers and AI Agents **MUST** review this document when debugging or planning complex features to avoid repeating past mistakes.
+
+---
+
+## 1. Firebase Authentication & Firestore Rules
+
+### 🔴 Error: `Missing or insufficient permissions` on Firestore Queries (Admin Dashboard)
+- **Symptoms**: `getDisasters`, `getDistributionReports`, `getDisbursements` throw permission errors when the Admin navigates to the dashboard, despite being "logged in".
+- **Root Cause**: The frontend `loginStaff` function was only saving `{ role: 'admin' }` to `localStorage` (mock session) without actually signing into Firebase Auth via `signInWithEmailAndPassword`. Because of this, the HTTP requests sent by the Firebase Client SDK to Firestore were **unauthenticated** (`request.auth == null`). The `firestore.rules` correctly blocked these requests.
+- **Fix Applied**: 
+  1. Updated `loginStaff` in `AuthContext.tsx` to strictly use `signInWithEmailAndPassword` even for the Master Admin.
+  2. Added an auto-creation fallback (`createUserWithEmailAndPassword`) for the Master Admin if their account didn't exist yet in the Auth database.
+  3. Added the Master Admin email to the `isAdmin()` function in `firestore.rules`.
+- **Lesson Learned**: **Never use UI-only state (`localStorage`) to bypass authentication.** If Firestore Rules expect `request.auth`, the user MUST possess a valid Firebase Auth JWT token.
+
+### 🔴 Error: Corrupted `firestore.rules` Syntax
+- **Symptoms**: All database queries fail globally.
+- **Root Cause**: Accidental duplication/overlap of rule blocks caused severe syntax errors (e.g., mismatched brackets and duplicated match statements).
+- **Fix Applied**: Completely restored `firestore.rules` from `backup/rules2.md` and meticulously reapplied custom rules line-by-line.
+- **Lesson Learned**: When modifying `firestore.rules`, avoid doing partial regex replacements. Ensure the brackets and logical conditions `||` / `&&` remain perfectly balanced.
+
+### 🔴 Error: `/api/admin/create-partner` → 403 "Forbidden: Admin access required" (Master Admin)
+- **Symptoms**: Gagal menambahkan mitra dari portal admin: `POST /api/admin/create-partner:1 Failed to load resource: the server responded with a status of 403` dan toast `Gagal menambahkan mitra: Forbidden: Admin access required`. Login admin (via `loginStaff` / `quickFillCredential`) sukses, portal admin terbuka, tetapi submit form mitra selalu ditolak.
+- **Root Cause**: Allowlist admin di `server/routes/admin.ts` (`create-partner`) hanya memuat dua email (`admin_backend@bersamakita.org`, `contohasdf@gmail.com`) + syarat `users.role == 'admin'` — **tanpa `bersamakita.my.id@protonmail.com`** (master admin yang dipakai `loginStaff`). Sementara itu `firestore.rules` `isAdmin()`, `AuthContext`, dan endpoint server lain (`fundraising.ts`, `images.ts`) sudah mengizinkan email master tersebut. Tambahan lagi, dokumen `users/{uid}` master admin ber-role **`user`** (bukan `admin`) karena `subscribeAuthState` memanggil `syncUserProfile(fbUser, 'user')` yang menimpa role akun staf ke `'user'` setiap sign-in/refresh — jadi jalur `users.role == 'admin'` pun gagal untuk akun staff.
+- **Fix Applied**: 
+  1. Tambah `bersamakita.my.id@protonmail.com` ke allowlist `create-partner` (`server/routes/admin.ts`) — selaras dengan `firestore.rules` & endpoint lain.
+  2. Helper terpusat `staffRoleForEmail()` di `src/services/firebase/auth.ts` (3 email admin + 1 email partner, "single source of truth"), dipakai `syncUserProfile` (sekarang termasuk `admin_backend@bersamakita.org`) dan `AuthContext` (`syncUserProfile(fbUser, staffRoleForEmail(fbUser.email))`) — role staf tidak lagi tertimpa `'user'`; akun Google biasa tetap dipaksa `'user'`.
+- **Lesson Learned**: Jangan menduplikasi allowlist admin per endpoint — sekecil apa pun bentuknya, dua salinan yang berbeda akan menyimpang (di sini server vs rules vs AuthContext). Semua pengecekan role staf harus berasal dari SATU sumber (helper berbagi / `firestore.rules` sebagai referensi). Juga: **jangan pernah melempar `forcedRole: 'user'` ke `syncUserProfile` utk semua akun** — itu menghapus role staf yang sah dari `users` collection dan membuat pengecekan berbasis dokumen (`users.role == 'admin'`/`'partner'`) tidak dapat diandalkan.
+
+---
+
+## 2. Firebase Admin SDK (Node.js / Express Backend)
+
+### 🔴 Error: `adminAuth is not defined`
+- **Symptoms**: Creating a Partner account via `POST /api/admin/create-partner` crashes the Express server.
+- **Root Cause**: While `adminDb` was imported into `server.ts`, the `adminAuth` instance was not exported from `firebase-admin.ts` or imported where it was being used.
+- **Fix Applied**: Properly exported `export const adminAuth = getAuth();` alongside the database instance and updated the import statement in `server.ts`.
+- **Lesson Learned**: Always explicitly check that the specific Firebase Admin module (Auth, Firestore, Storage) is initialized and imported before deploying new backend routes.
+
+---
+
+## 3. Business Logic Violations
+
+### 🔴 Error: Pending BMKG Data Leaking to Public Users
+- **Symptoms**: When the Firestore database was completely empty, newly fetched earthquake data from BMKG was automatically visible to public donors without Admin approval.
+- **Root Cause**: The frontend (`App.tsx`) contained "fallback" logic that injected `status: 'published'` into live BMKG data just to avoid rendering an empty screen. Additionally, there was a background cron script that auto-approved data after 24 hours.
+- **Fix Applied**: 
+  1. Destroyed all auto-publish fallback logic. 
+  2. Deleted the 24-hour cron endpoint. 
+  3. Forced all incoming BMKG data to have `status: 'pending_verification'`. 
+  4. Designed a proper "Empty State" UI for users (`Belum Ada Posko Bencana Terverifikasi`).
+- **Lesson Learned**: **Never write code that sacrifices strict business rules for the sake of UI convenience.** Empty states are valid and required. All data must explicitly await manual human verification (`admin_approved`).
+
+### 🔴 Error: Login Google gagal sebagian pengguna — `auth/popup-blocked` → masuk sebagai "Donatur Google" palsu (dashboard 403)
+- **Symptoms**: Klik "Sign in with Google" → popup langsung tertutup/tidak terbuka → konsol: `Google Sign In Notice: auth/popup-blocked`, `Fallback profile saved locally: FirebaseError: Missing or insufficient permissions`, `... net::ERR_BLOCKED_BY_CLIENT`, dan setelah "berhasil masuk" dashboard dipenuhi `getUserDonations by userId/email notice: FirebaseError: Missing or insufficient permissions`. Hanya sebagian akun (mis. `contohasdf@gmail.com`, `alvinjauhari29@gmail.com`) yang berhasil — sisanya gagal dengan pola ini.
+- **Root Cause**: (1) `loginWithGoogle` memakai `signInWithPopup` — di lingkungan yang memblokir popup (popup blocker, ekstensi adblock/privacy → `ERR_BLOCKED_BY_CLIENT`, panel preview/iframe, in-app browser) browser melempar `auth/popup-blocked`. BUKAN masalah validasi akun — kode TIDAK membatasi email Google mana pun. (2) Saat popup gagal, fallback lama membuat **sesi fiktif** `google-donatur-XXXX` / `donatur.google@bersamakita.org` (bukan user Firebase Auth) dan menyimpannya ke localStorage → app menganggap "login sukses", tapi semua request Firestore jadi **tidak terautentikasi** → `Missing or insufficient permissions` di mana-mana (termasuk write profil fallback yang ditolak).
+- **Fix Applied**:
+  1. **Ganti ke redirect sign-in** (`signInWithRedirect`) — kebal popup blocker; hasil ditangkap `getRedirectResult()` via `completeGoogleRedirect()` yang dipanggil sekali saat `AuthContext` mount (juga membuang pending redirect tersisa). `prompt: 'select_account'` tetap dibawa.
+  2. **Hapus fallback sesi fiktif** — tidak ada lagi uid palsu. Kegagalan dilempar dengan pesan ramah (`googleSignInErrorMessage`: unauthorized-domain, popup-blocked, popup-closed, operation-not-supported-in-this-environment, account-exists-with-different-credential, network-request-failed).
+  3. **Purge otomatis** sesi fiktif lama dari localStorage (`GOOGLE_SESSION_KEY`, `bersamakita_local_user`) utk pengguna yang sudah terkontaminasi.
+  4. Halaman login (`UserLoginPage`, `MinimalistLanding`) tidak lagi navigate/toast "sukses" saat klik — navigasi terjadi otomatis setelah balik dari Google (efek `if (user)`).
+- **Lesson Learned**: Jangan pernah menggantikan kegagalan sign-in dengan sesi lokal buatan yang terlihat login — akun palsu yang tidak terautentikasi menghasilkan sederet permission-denied yang membingungkan (gejalanya mirip "bug rules"). Untuk Google Sign-In lintas-browser, **redirect** lebih andal daripada popup. Sesi berstatus "logged-in" HANYA boleh berasal dari Firebase Auth yang sah.
+- **Status (Fase 6.5–6.7, keputusan owner — SUPERSEDES langkah redirect di atas)**: eksperimen redirect + hybrid popup→redirect **dibatalkan total**. Login kini **popup murni** (`signInWithPopup` saja; `completeGoogleRedirect` dihapus). Yang dipertahankan: sesi fiktif tetap dihapus + error jujur via `googleSignInErrorMessage()` + seluruh akses storage via `src/lib/safe-storage.ts`. Konsekuensi: bila popup diblokir (setting per-situs), user wajib mengizinkan pop-up untuk domain situs — lihat entri "Vercel berperilaku beda dari lokal" di bawah.
+
+### 🔴 Error: `Uncaught (in promise) Error: Access to storage is not allowed from this context` di `login?redirect=/dashboard` + stuck di halaman login pasca-redirect
+- **Symptoms**: Setelah "berhasil login di Google" (redirect kembali ke app), user stuck di halaman `login?redirect=/dashboard` tanpa navigasi ke dashboard; konsol: `Uncaught (in promise) Error: Access to storage is not allowed from this context.` Terjadi di browser dengan pemblokir agresif (adblock/privacy → `ERR_BLOCKED_BY_CLIENT`), pengaturan "block site data/cookies", atau panel preview/iframe sandbox.
+- **Root Cause**: (1) Akses `localStorage` langsung (tanpa try/catch) di `auth.ts`/`AuthContext.tsx` melempar sinkron saat storage diblokir → unhandled rejection di level dokumen. (2) Lebih fatal: **hasil `signInWithRedirect` WAJIB dibaca dari Web Storage setelah navigasi penuh** (Firebase Auth menyimpan pending-redirect di sessionStorage/IndexedDB). Bila storage diblokir total, `getRedirectResult()` gagal dan `onAuthStateChanged` tidak bisa memulihkan sesi (in-memory hilang saat navigasi) → tidak ada `user` → efek auto-navigate tidak terpicu → stuck tanpa pesan. BUKAN bug redirect/navigasi — ini kegagalan persistensi.
+- **Fix Applied**:
+  1. `src/lib/safe-storage.ts` (baru): `safeGet/safeSet/safeRemove` (tidak pernah throw), probe `isWebStorageAvailable()`, detektor `isStorageBlockedError()`, pesan panduan `STORAGE_BLOCKED_MESSAGE`. SELURUH akses storage di `src/` wajib lewat helper ini.
+  2. `ensureAuthPersistence()` di `auth.ts`: setPersistence berlapis `browserLocal → browserSession → inMemory`, semua kegagalan tertangkap + dilaporkan (`storageBlocked`).
+  3. `AuthContext`: probe storage saat mount → set `storageBlocked`/`redirectError` (diekspos ke UI); error `completeGoogleRedirect()` disalurkan ke state, bukan hanya `console.warn`.
+  4. `UserLoginPage`: banner kuning "Penyimpanan browser diblokir" (panduan izinkan site data / matikan blocker / buka tab penuh) + banner/toast error redirect sekali.
+- **Lesson Learned**: Redirect sign-in FUNDAMENTAL membutuhkan persistent storage — tanpa itu tidak ada kode yang bisa memulihkan sesi (in-memory hilang saat navigasi). Bila storage diblokir, satu-satunya perbaikan adalah di sisi pengguna (izinkan site data); tugas kode adalah (a) tidak pernah unhandled-reject, (b) mendeteksi kondisi ini, (c) mengomunikasikannya jujur di UI. Jangan akses `localStorage` mentah di jalur mount/auth — selalu lewat wrapper aman. (Catatan: warning CSP `connect-src 'none'` report-only dari beacon Cloudflare/Duitku di halaman checkout adalah noise eksternal, bukan penyebab — policy report-only, "no further action has been taken".)
+- **Status (Fase 6.7)**: mesin redirect (`completeGoogleRedirect`, `ensureAuthPersistence`, banner storage) **dihapus** bersama revert ke popup murni. Yang dipertahankan: `src/lib/safe-storage.ts` sebagai wrapper wajib seluruh akses storage.
+
+### 🟡 Perilaku: Vercel (redirect) berbeda dari lokal (popup) padahal kode sama
+- **Symptoms**: Di `localhost` login memakai popup (benar), di `bersamakita.vercel.app` login malah bernavigasi ke Google (redirect) — user menyangka deploy salah/kadaluarsa.
+- **Root Cause**: BUKAN beda kode — setting blokir pop-up Chrome itu **per-situs**: `localhost` diizinkan, domain Vercel diblokir (atau link dibuka via in-app browser). Pada era hybrid (Fase 6.6), fallback otomatis ke redirect memang sengaja aktif saat popup diblokir; pada era popup-murni (Fase 6.7), popup yang diblokir murni gagal + toast jujur.
+- **Fix Applied**: (1) Verifikasi deploy dengan FAKTA, bukan asumsi — ambil `index.html` live, unduh bundle JS yang dirujuk, `grep` marker string kode baru (`fallback otomatis ke redirect`, `Google redirect sign-in selesai utk`) dan pastikan marker lama nol (`Donatur Google`, `google-donatur-`). (2) Untuk perilaku popup di Vercel: izinkan pop-up per-situs (ikon gembok → Site settings → Pop-ups and redirects → Allow) + hard refresh; buka di tab browser penuh. Diverifikasi live 12 Okt 2026: bundle `index-BryBkuOo.js` NOL marker redirect/fallback/sesi-palsu.
+- **Lesson Learned**: Saat "Vercel beda dari lokal", langkah PERTAMA adalah verifikasi isi bundle live (satu `curl` + `grep`), bukan menebak kode kadaluarsa. Perbedaan perilaku dgn kode identik hampir selalu berasal dari environment browser (per-site permission, ekstensi, cache `index.html` lama → hard refresh).
+
+### 🔴 Error: User biasa kena `Missing or insufficient permissions` (write ke `disasters/...` + `getDisasters` baca gagal) pasca-hardening rules
+- **Symptoms**: Akun Google biasa (mis. `alvinjauhari29@gmail.com`) mencetak di console (produksi): `getDisasters notice: FirebaseError: Missing or insufficient permissions`, `Firestore Error: {... "operationType":"write", "path":"disasters/disaster-auto-..."}`, dan `Initial BMKG pool check notice: Error: ...`.
+- **Root Cause**: Setelah hardening `firestore.rules` (Fase 5) membatasi write `earthquakeEvents`/`disasters` ke admin/partner, **masih tersisa dua jalur ingest BMKG sisi klien**: (1) bootstrap "Initial BMKG pool check" di `loadData` (`App.tsx`) yang dipicu ketika `isAdminAuthenticated` benar (termasuk bila `staffSession` admin tersisa stale di localStorage) — jika akun yang sedang login adalah Google biasa, tokennya tidak admin → write ditolak; (2) `handleAdminRefreshBMKG` yang menulis via `saveBMKGDisaster`. Selain itu `getDisasters('all')` (query TANPA filter status) yang dipakai pool check **ditolak rules utk non-admin**: aturan read memanggil `isAdmin()` yang butuh `get()`, dan query tak-terkendali tidak bisa dibuktikan oleh rules engine → seluruh query di-deny tanpa per-doc filter.
+- **Fix Applied**: Semua ingest BMKG kini melalui server — satu helper `refreshBMKGServer()` (`POST /api/bmkg/refresh`, verifyIdToken + Admin SDK, hasil SELALU `pending_verification`) dipakai oleh pool check, tombol "Refresh BMKG" user, dan admin refresh. Klien **tidak menulis** `earthquakeEvents`/`disasters` di jalur mana pun. **Lapisan kedua (akar masalah)**: `AuthContext` merekonciliasi `staffSession` (localStorage) dengan Firebase user aktif — saat email session ≠ email token, session staff **dibersihkan otomatis** (mencegah mismatch "flag admin stale + token Google biasa"). `loadData` juga diberi fallback `getDisasters('published')` bila query admin `'all'` gagal (agar daftar user tidak kosong). Diklarifikasi via REST: query `status == 'admin_approved'` diizinkan utk user biasa, tetapi query `'all'`/`status IN [...]` yang mencakup `pending_verification` **403** — mode `'all'` hanya bisa dibaca token admin. QA `scripts/qa-phase6.ts` menambah bukti user biasa BISA query baca `admin_approved` (HTTP 200) dan tetap DITOLAK write (403).
+- **Lesson Learned**: Hardening rules bukan hanya mengunci rule Firestore — **audit semua pemanggil client-side yang tersisa** (terutama jalur "auto/bootstrap" yang berjalan untuk rol apapun). Jangan pernah menganggap `isAdminAuthenticated` frontend (bisa berasal dari `staffSession` stale) samadengan token Firebase yang benar-benar admin. Standar: **write kolektif/operasional → endpoint Express via Admin SDK; klien hanya baca**.
+- **Referensi**: `GET /api/bmkg/refresh` di `server/routes/bmkg.ts`; helper `refreshBMKGServer()` di `src/App.tsx`; test di `scripts/qa-phase6.ts`.
+
+### 🔴 Error: `Access to storage is not allowed from this context.` (Uncaught (in promise) di dashboard)
+- **Symptoms**: Error runtime di console saat halaman dashboard dimuat, padahal aplikasi tidak meng-upload apa pun ke Firebase Storage.
+- **Root Cause**: `src/config/firebase.ts` mengeksekusi `getStorage(app)` **saat import modul**. Di konteks tanpa `indexedDB`/storage-partitioned (mis. iframe sandbox, panel preview, ekstensi) Firebase Storage melempar error ini saat inisialisasi. Modul mana pun tidak mengimpor `storage` (export mati) — semua upload bukti penyaluran sudah via Cloudinary/server.
+- **Fix Applied**: Hapus `getStorage`/`export const storage` dari `firebase.ts`. Bila kelak benar-benar butuh Storage, inisialisasi LAZY tepat di modul pemakainya.
+- **Lesson Learned**: Jangan inisialisasi SDK pada module-eval jika belum dipakai — inisialisasi lazy hanya di tempat penggunaan. Export yang tidak pernah diimpor tetap bisa menimbulkan error runtime saat import.
+
+> ⚠️ **Catatan QA Firestore REST**: Untuk query via REST gunakan URL `.../documents:runQuery` dengan koleksi di body `structuredQuery.from` — bentuk `.../documents/disasters:runQuery` di-resolve server sebagai `createDocument` (HTTP 400 `Unknown name "structuredQuery" at 'document'`). Browser SDK tidak terpengaruh (memakai API internal berbeda), hanya pola test/curl.
