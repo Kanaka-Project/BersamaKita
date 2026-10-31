@@ -266,8 +266,9 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
           )}
 
           {activeTab === 'audit-logs' && (
-            <AuditLogsView logs={auditLogs} />
+            <AuditLogsView logs={auditLogs} onReset={onDataChanged} />
           )}
+
 
           {activeTab === 'settings' && (
             <DuitkuSettingsView onDataChanged={onDataChanged} />

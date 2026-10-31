@@ -138,4 +138,65 @@ router.post('/reset-transactions', async (req: Request, res: Response): Promise<
 });
 
 
+// Admin-protected endpoint for resetting audit logs
+router.delete('/audit-logs', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(403).json({ success: false, error: 'Forbidden: No token provided' });
+    }
+    const token = authHeader.split('Bearer ')[1];
+    if (!adminAuth || !adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin SDK not fully initialized' });
+    }
+
+    const decodedToken = await adminAuth.verifyIdToken(token);
+
+    // Check if admin (same logic as create-partner)
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    const isAdmin =
+      decodedToken.email === 'admin_backend@bersamakita.org' ||
+      decodedToken.email === 'contohasdf@gmail.com' ||
+      decodedToken.email === 'bersamakita.my.id@protonmail.com' ||
+      (userDoc.exists && userDoc.data()?.role === 'admin');
+
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
+    }
+
+    const collRef = adminDb.collection('auditLogs');
+    const snapshot = await collRef.get();
+
+    let totalDeleted = 0;
+    let batch = adminDb.batch();
+    let count = 0;
+
+    for (const doc of snapshot.docs) {
+      batch.delete(doc.ref);
+      count++;
+      totalDeleted++;
+
+      if (count === 500) {
+        await batch.commit();
+        batch = adminDb.batch();
+        count = 0;
+      }
+    }
+
+    if (count > 0) {
+      await batch.commit();
+    }
+
+    return res.json({
+      success: true,
+      message: `Berhasil menghapus ${totalDeleted} catatan audit log.`,
+      deletedCount: totalDeleted,
+    });
+  } catch (err: any) {
+    console.error('Error resetting audit logs:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
+
