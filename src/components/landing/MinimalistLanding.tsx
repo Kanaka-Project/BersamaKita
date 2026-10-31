@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Heart,
   ArrowRight,
@@ -57,9 +57,9 @@ export const MinimalistLanding: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans selection:bg-[#0C8F63] selection:text-white">
       {/* Left Panel: Content (50%) */}
-      <div className="w-full md:w-1/2 flex flex-col p-8 md:p-16 lg:p-24 relative z-10 bg-white shadow-[1px_0_10px_rgba(0,0,0,0.05)]">
+      <div className="w-full md:w-1/2 flex flex-col px-8 py-6 md:px-16 md:py-8 lg:px-24 lg:py-10 relative z-10 bg-white shadow-[1px_0_10px_rgba(0,0,0,0.05)]">
         {/* Header */}
-        <header className="flex items-center justify-between mb-16">
+        <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
               <img src="/assets/images/logo.svg" alt="Logo" className="w-10 h-10" />
@@ -70,7 +70,6 @@ export const MinimalistLanding: React.FC = () => {
             </div>
           </div>
           
-          {/* Mobile login handled in buttons below, but kept top-right for desktop */}
           <div className="hidden sm:block">
             {user ? (
               <button
@@ -137,11 +136,13 @@ export const MinimalistLanding: React.FC = () => {
         </main>
 
         {/* Footer */}
-        <footer className="mt-16 text-[11px] text-slate-500 font-medium flex flex-wrap gap-x-6 gap-y-3">
+        <footer className="mt-6 text-[11px] text-slate-500 font-medium flex flex-wrap items-center gap-x-5 gap-y-1">
           <p>© 2026 Bersama Kita</p>
-          <span onClick={() => navigate('/faq')} className="hover:text-slate-800 transition-colors cursor-pointer">FAQ</span>
-          <span onClick={() => navigate('/terms')} className="hover:text-slate-800 transition-colors cursor-pointer">Syarat & Ketentuan</span>
-          <span onClick={() => navigate('/contact')} className="hover:text-slate-800 transition-colors cursor-pointer">Hubungi Kami</span>
+          <nav aria-label="Tautan footer" className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Link to="/faq" className="hover:text-slate-800 transition-colors">FAQ</Link>
+            <Link to="/terms" className="hover:text-slate-800 transition-colors">Syarat & Ketentuan</Link>
+            <Link to="/contact" className="hover:text-slate-800 transition-colors">Hubungi Kami</Link>
+          </nav>
         </footer>
       </div>
 
