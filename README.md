@@ -495,10 +495,12 @@ Semua merek dagang dan hak kekayaan intelektual tetap menjadi milik pemiliknya m
 
 ---
 
-::: {align="center"}
+<div align="center">
+
 **BERSAMA KITA**
 
 *Satu Kepedulian, Sejuta Harapan.*
 
 Bersama membantu, bersama menjaga transparansi.
-:::
+
+</div>
