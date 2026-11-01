@@ -157,6 +157,19 @@ npm run dev            # Express + Vite middleware → http://localhost:3005
 
 ---
 
+## 5.1 Akun Staf (Development / Demo)
+
+> ⚠️ **Peringatan Keamanan:** Kredensial di bawah ini hanya untuk lingkungan development/demo. Jangan gunakan password ini di produksi — rotasi segera sebelum deploy publik.
+
+| Peran | Email | Password |
+|---|---|---|
+| Admin (Dashboard) | `bersamakita.my.id@protonmail.com` | `bersamakita01` |
+| Partner (Mitra Lapangan) | `partnerbersamakita@protonmail.com` | `bersamakita01` |
+
+Akun di atas dibuat melalui Firebase Authentication (email/password). Pastikan dokumen `users/{uid}` memiliki `role` yang sesuai (`admin` / `partner`) agar akses dashboard berfungsi.
+
+---
+
 ## 6. Variabel Lingkungan (.env)
 
 | Variabel | Prefix | Kegunaan |
