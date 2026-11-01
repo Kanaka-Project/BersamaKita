@@ -13,17 +13,17 @@ router.post('/create-partner', async (req: Request, res: Response): Promise<any>
     if (!adminAuth || !adminDb) {
       return res.status(500).json({ success: false, error: 'Firebase Admin SDK not fully initialized' });
     }
-    
+
     const decodedToken = await adminAuth.verifyIdToken(token);
-    
+
     // Check if admin
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    const isAdmin = 
-      decodedToken.email === 'admin_backend@bersamakita.org' || 
+    const isAdmin =
+      decodedToken.email === 'admin_backend@bersamakita.org' ||
       decodedToken.email === 'contohasdf@gmail.com' ||
       decodedToken.email === 'bersamakita.my.id@protonmail.com' ||
       (userDoc.exists && userDoc.data()?.role === 'admin');
-      
+
     if (!isAdmin) {
       return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
     }
@@ -105,7 +105,7 @@ router.post('/reset-transactions', async (req: Request, res: Response): Promise<
     for (const collName of collectionsToDelete) {
       const collRef = adminDb.collection(collName);
       const snapshot = await collRef.get();
-      
+
       let batch = adminDb.batch();
       let count = 0;
 

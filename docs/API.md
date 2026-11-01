@@ -1,3 +1,4 @@
+<!-- Updated to match current website (2026-11-01) -->
 # API Integration Specifications
 
 This document outlines the API endpoints provided by the backend (`server/app.ts` + `server/routes/*`) and external API usage.

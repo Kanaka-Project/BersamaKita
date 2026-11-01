@@ -1,3 +1,4 @@
+<!-- Updated to match current website (2026-11-01) -->
 # Architecture Overview
 
 ## Tech Stack
