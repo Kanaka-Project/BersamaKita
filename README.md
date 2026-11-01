@@ -89,7 +89,7 @@ Bersama Kita mengintegrasikan lima tahapan utama:
 
 ## Demo dan Tampilan Aplikasi
 
-> **Demo aplikasi:** _[GANTI DENGAN URL DEMO PRODUKSI]_
+> **Demo aplikasi:** https://bersamakita.vercel.app/
 >
 > **Repository:** https://github.com/Kanaka-Project/BersamaKita
 
