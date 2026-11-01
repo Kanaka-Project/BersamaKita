@@ -27,8 +27,12 @@ export const SituationAnalysisPage: React.FC<SituationAnalysisPageProps> = ({
   const { disasterId } = useParams<{ disasterId: string }>();
   const navigate = useNavigate();
 
-  const selectedDisaster =
-    disasters.find((d) => d.id === disasterId) || disasters[0];
+  // Pilih bencana sesuai param URL; fallback ke bencana pertama hanya jika
+  // tidak ada param (mis. navbar "Analisis Situasi"). Jangan sembunyikan
+  // kegagalan pencarian dengan diam-diam menampilkan bencana pertama.
+  const selectedDisaster = disasterId
+    ? disasters.find((d) => d.id === disasterId)
+    : disasters[0];
 
   if (!selectedDisaster) {
     return (

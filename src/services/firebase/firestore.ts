@@ -69,9 +69,13 @@ export async function getDisasters(
     let q;
     const effectiveFilter = !auth.currentUser && filter === 'all' ? 'published' : filter;
     if (effectiveFilter === 'published') {
+      // Sertakan semua status yang dianggap "published" agar konsisten dengan
+      // filter dashboard (admin_approved, auto_approved, published). Sebelumnya
+      // hanya admin_approved → bencana auto_approved/published tidak ditemukan
+      // di halaman analisis (selalu fallback ke bencana pertama).
       q = query(
         collRef,
-        where('status', '==', 'admin_approved'),
+        where('status', 'in', ['admin_approved', 'auto_approved', 'published']),
         limit(50)
       );
     } else if (effectiveFilter === 'pending') {

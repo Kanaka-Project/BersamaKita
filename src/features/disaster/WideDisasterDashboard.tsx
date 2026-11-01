@@ -231,7 +231,7 @@ export const WideDisasterDashboard: React.FC<WideDisasterDashboardProps> = ({
                     donorCount={stats.count}
                     onSelect={() => setSelectedDisasterId(disaster.id)}
                     onDonate={() => onDonateDisaster(disaster.id)}
-                    onAnalyze={() => setAnalyzingDisaster(disaster)}
+                    onAnalyze={() => onAnalyzeDisaster?.(disaster.id)}
                   />
                 );
               })
