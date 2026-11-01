@@ -6,10 +6,10 @@ import { useToast } from '../../components/feedback/Toast';
 
 // Real earthquake disaster photos from Unsplash (free license)
 const CAROUSEL_IMAGES = [
-  'https://images.unsplash.com/photo-1677233861362-c3aa97f11638?auto=format&fit=crop&w=1920&q=80', // Reruntuhan gempa Turki — İskenderun, Hatay
-  'https://images.unsplash.com/photo-1638890809947-673d33ac18d4?auto=format&fit=crop&w=1920&q=80', // Puing bangunan kota pasca gempa
-  'https://images.unsplash.com/photo-1621077742647-ec3354f77c5d?auto=format&fit=crop&w=1920&q=80', // Kerusakan struktur bangunan
-  'https://images.unsplash.com/photo-1761251947432-0ad734f43697?auto=format&fit=crop&w=1920&q=80', // Bangunan hancur dengan struktur terbuka
+  'https://images.unsplash.com/photo-1677233861362-c3aa97f11638?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1638890809947-673d33ac18d4?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1621077742647-ec3354f77c5d?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1761251947432-0ad734f43697?auto=format&fit=crop&w=1920&q=80',
 ];
 
 export const UserLoginPage: React.FC = () => {
@@ -51,26 +51,25 @@ export const UserLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row font-sans selection:bg-[#0C8F63] selection:text-white bg-white">
-      
+    <div className="min-h-screen flex flex-col-reverse md:flex-row font-sans selection:bg-[#0C8F63] selection:text-white bg-white">
+
       {/* Left Panel: Branding & Illustration with Carousel */}
-      <div className="w-full md:w-1/2 relative p-8 md:p-16 flex flex-col justify-between min-h-[30vh] md:min-h-screen overflow-hidden">
-        
+      <div className="w-full md:w-1/2 relative p-8 md:p-16 flex flex-col justify-between min-h-[35vh] md:min-h-screen overflow-hidden">
+
         {/* Background Image Carousel */}
         {CAROUSEL_IMAGES.map((img, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out transform scale-105 ${
-              idx === currentIndex ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out transform scale-105 ${idx === currentIndex ? 'opacity-100' : 'opacity-0'
+              }`}
             style={{ backgroundImage: `url(${img})` }}
           />
         ))}
         {/* Overlay to ensure text readability */}
         <div className="absolute inset-0 bg-black/50" />
 
-        {/* Header / Logo */}
-        <button onClick={() => navigate('/')} className="flex items-center gap-3 relative z-10 text-left group">
+        {/* Header / Logo - hidden on mobile since login is on top */}
+        <button onClick={() => navigate('/')} className="hidden md:flex items-center gap-3 relative z-10 text-left group">
           <div className="w-10 h-10 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
             <img src="/assets/images/logo.svg" alt="Logo" className="w-10 h-10" />
           </div>
@@ -80,10 +79,10 @@ export const UserLoginPage: React.FC = () => {
           </div>
         </button>
 
-        {/* Main Illustration Area */}
-        <main className="relative z-10 flex-1 flex flex-col justify-center py-12 max-w-sm">
+        {/* Main Illustration Area - hidden on mobile */}
+        <main className="hidden md:flex relative z-10 flex-1 flex-col justify-center py-12 max-w-sm">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-            Satu langkah kecil, <br/> perubahan besar.
+            Satu langkah kecil, <br /> perubahan besar.
           </h2>
           <p className="text-white/90 font-medium text-sm">
             Bergabunglah dengan ribuan donatur lainnya untuk membantu mereka yang terdampak bencana.
@@ -96,9 +95,17 @@ export const UserLoginPage: React.FC = () => {
       </div>
 
       {/* Right Panel: Login Interaction (Solid White) */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between p-8 md:p-16 min-h-[70vh] md:min-h-screen">
-        
-        {/* Spacer for vertical centering in flex-col */}
+      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between p-8 md:p-16 min-h-[65vh] md:min-h-screen">
+        {/* Mobile logo (visible only when login panel is on top) */}
+        <button onClick={() => navigate('/')} className="md:hidden flex items-center gap-2.5 mb-8">
+          <img src="/assets/images/logo.svg" alt="Logo" className="w-8 h-8" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-gray-900 tracking-wide text-xs">BERSAMA KITA</span>
+            <span className="font-extrabold text-[#0C8F63] text-sm tracking-wider">CHARITY</span>
+          </div>
+        </button>
+
+        {/* Spacer for vertical centering in flex-col (desktop only) */}
         <div className="hidden md:block"></div>
 
         <div className="w-full max-w-[400px] mx-auto flex flex-col justify-center">
@@ -106,7 +113,7 @@ export const UserLoginPage: React.FC = () => {
             Login Donatur
           </h1>
           <p className="text-sm text-gray-500 mb-8 font-medium">Selamat datang kembali! Lanjutkan niat baik Anda hari ini.</p>
-          
+
           {/* Feature highlights to fill space and build trust */}
           <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-8 space-y-4">
             <div className="flex items-start gap-4">
@@ -161,7 +168,7 @@ export const UserLoginPage: React.FC = () => {
               )}
               <span>{loading ? 'Masuk...' : 'Sign in with Google'}</span>
             </button>
-            
+
             <p className="text-xs text-gray-500 leading-relaxed font-medium text-center">
               Akses cepat dengan akun Google terdaftar Anda.
             </p>
@@ -174,7 +181,7 @@ export const UserLoginPage: React.FC = () => {
             Terms and Services
           </button>
           <div className="text-center md:text-right">
-            Have a problem? Contact us at<br/>
+            Have a problem? Contact us at<br />
             <a href="mailto:info@bersamakita.org" className="underline hover:text-gray-600 transition-colors">info@bersamakita.org</a>
           </div>
         </footer>
