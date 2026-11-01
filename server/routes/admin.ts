@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { adminDb, adminAuth } from '../../src/config/firebase-admin.js';
+import { isAdminUser } from '../lib/role-check.js';
 
 const router = Router();
 
@@ -18,11 +19,7 @@ router.post('/create-partner', async (req: Request, res: Response): Promise<any>
 
     // Check if admin
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    const isAdmin =
-      decodedToken.email === 'admin_backend@bersamakita.org' ||
-      decodedToken.email === 'contohasdf@gmail.com' ||
-      decodedToken.email === 'bersamakita.my.id@protonmail.com' ||
-      (userDoc.exists && userDoc.data()?.role === 'admin');
+    const isAdmin = await isAdminUser(decodedToken, adminDb);
 
     if (!isAdmin) {
       return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
@@ -79,10 +76,22 @@ router.post('/create-partner', async (req: Request, res: Response): Promise<any>
 // Admin-protected endpoint for resetting transaction data
 router.post('/reset-transactions', async (req: Request, res: Response): Promise<any> => {
   try {
-    // In a real app, verify admin token from req.headers.authorization
+    // Authorization: accept either the legacy ADMIN_SECRET_KEY (for scripts/cron)
+    // or a valid Firebase ID token belonging to an admin user.
     const authHeader = req.headers.authorization;
     const adminSecret = process.env.ADMIN_SECRET_KEY;
-    if (!adminSecret || authHeader !== `Bearer ${adminSecret}`) {
+    let authorized = false;
+    if (adminSecret && authHeader === `Bearer ${adminSecret}`) {
+      authorized = true;
+    } else if (adminAuth && adminDb && authHeader?.startsWith('Bearer ')) {
+      try {
+        const decoded = await adminAuth.verifyIdToken(authHeader.split('Bearer ')[1]);
+        authorized = await isAdminUser(decoded, adminDb);
+      } catch {
+        authorized = false;
+      }
+    }
+    if (!authorized) {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
 
@@ -154,11 +163,7 @@ router.delete('/audit-logs', async (req: Request, res: Response): Promise<any> =
 
     // Check if admin (same logic as create-partner)
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    const isAdmin =
-      decodedToken.email === 'admin_backend@bersamakita.org' ||
-      decodedToken.email === 'contohasdf@gmail.com' ||
-      decodedToken.email === 'bersamakita.my.id@protonmail.com' ||
-      (userDoc.exists && userDoc.data()?.role === 'admin');
+    const isAdmin = await isAdminUser(decodedToken, adminDb);
 
     if (!isAdmin) {
       return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });

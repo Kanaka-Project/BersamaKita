@@ -4,7 +4,6 @@ import {
   logout as authLogout,
   subscribeAuthState,
   syncUserProfile,
-  staffRoleForEmail,
   AppUser,
 } from '../../services/firebase/auth';
 import { UserProfile, UserRole } from '../../types';
@@ -112,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           // Role staf (admin/partner) dihitung dari email agar tidak tertimpa 'user'
           // oleh forcedRole (lihat syncUserProfile: forcedRole != data.role -> overwrite).
-          const prof = await syncUserProfile(fbUser, staffRoleForEmail(fbUser.email));
+          const prof = await syncUserProfile(fbUser);
           setProfile(prof);
           safeSet(GOOGLE_SESSION_KEY, JSON.stringify({ user: appUser, profile: prof }));
         } catch (e) {
@@ -198,68 +197,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = pass.trim();
 
-    // Strict credential validation for designated staff accounts only (Master Admin)
-    if (cleanEmail === 'bersamakita.my.id@protonmail.com' && cleanPass === 'bersamakita01') {
-      try {
-        const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
-        const { auth, db } = await import('../../config/firebase');
-        const { setDoc, doc } = await import('firebase/firestore');
-        
-        try {
-          await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
-        } catch (authErr: any) {
-          // If the user doesn't exist yet, we create it so the Admin has a valid token
-          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
-            const uc = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
-            await setDoc(doc(db, 'users', uc.user.uid), {
-              id: uc.user.uid,
-              email: cleanEmail,
-              displayName: 'Administrator Operasional',
-              role: 'admin',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            });
-          } else {
-            console.warn('Firebase master admin auth error:', authErr);
-          }
-        }
-      } catch (e) {
-        console.warn('Could not initialize Firebase Auth for master admin:', e);
-      }
-
-      const session: StaffSession = {
-        email: 'bersamakita.my.id@protonmail.com',
-        role: 'admin',
-        name: 'Administrator Operasional',
-        loginAt: new Date().toISOString(),
-      };
-      setStaffSession(session);
-      safeSet(STAFF_SESSION_KEY, JSON.stringify(session));
-      return { role: 'admin' };
-    } 
-    
     try {
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       const { auth, db } = await import('../../config/firebase');
-      const { getDoc, doc } = await import('firebase/firestore');
+      const { getDoc, setDoc, doc } = await import('firebase/firestore');
+      const { staffRoleForEmail } = await import('../../services/firebase/auth');
 
       const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
       const user = userCredential.user;
 
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists() || userDoc.data()?.role !== 'partner') {
-        throw new Error('Akun bukan partner terdaftar.');
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let role: 'admin' | 'partner' | null = null;
+      let displayName = cleanEmail.split('@')[0] || 'Staf';
+
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data?.role === 'admin') { role = 'admin'; displayName = data.displayName || displayName; }
+        else if (data?.role === 'partner') { role = 'partner'; displayName = data.displayName || displayName; }
+      }
+
+      // Bootstrap: if the account authenticates but has no staff role doc yet,
+      // grant role based on the (env-configured) allow-list. Never grants
+      // admin/partner to arbitrary emails.
+      if (!role) {
+        const derived = staffRoleForEmail(cleanEmail);
+        if (derived === 'admin' || derived === 'partner') {
+          role = derived;
+          try {
+            await setDoc(userDocRef, {
+              id: user.uid,
+              email: cleanEmail,
+              displayName,
+              role,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }, { merge: true });
+          } catch (e) {
+            console.warn('Bootstrap staff doc failed:', e);
+          }
+        }
+      }
+
+      if (!role) {
+        throw new Error('Akun bukan staf terdaftar.');
       }
 
       const session: StaffSession = {
         email: cleanEmail,
-        role: 'partner',
-        name: userDoc.data()?.displayName || 'Mitra Lapangan Terpadu',
+        role,
+        name: displayName || (role === 'admin' ? 'Administrator Operasional' : 'Mitra Lapangan Terpadu'),
         loginAt: new Date().toISOString(),
       };
       setStaffSession(session);
       safeSet(STAFF_SESSION_KEY, JSON.stringify(session));
-      return { role: 'partner' };
+      return { role };
     } catch (err: any) {
       console.error('Staff login error:', err);
       throw new Error(

@@ -178,7 +178,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
         id: `audit-${Date.now()}`,
         actorId: staffSession?.email || 'partner',
         actorRole: 'partner',
-        actorEmail: staffSession?.email || 'partnerbersamakita@protonmail.com',
+        actorEmail: staffSession?.email || '',
         action: 'PARTNER_FUNDS_CONFIRMED',
         entityType: 'partnerAllocation',
         entityId: alloc.id,
@@ -330,7 +330,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
         id: `audit-${Date.now()}`,
         actorId: staffSession?.email || 'partner',
         actorRole: 'partner',
-        actorEmail: staffSession?.email || 'partnerbersamakita@protonmail.com',
+        actorEmail: staffSession?.email || '',
         action: editingReport ? 'PARTNER_REPORT_EDITED' : 'PARTNER_REPORT_SUBMITTED',
         entityType: 'distributionReport',
         entityId: reportId,
@@ -413,7 +413,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <span className="hidden lg:block text-xs text-slate-500 mr-2">
-            {staffSession?.email || 'partnerbersamakita@protonmail.com'}
+            {staffSession?.email || ''}
           </span>
           <button
             onClick={() => navigate('/dashboard')}

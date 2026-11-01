@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { adminDb, adminAuth } from '../../src/config/firebase-admin.js';
+import { isAdminUser } from '../lib/role-check.js';
 import {
   ADMIN_FEE_RATE,
   MIN_WITHDRAWAL,
@@ -182,11 +183,7 @@ router.post('/admin/disbursements', async (req, res) => {
     try {
       const decoded = await fbAuth.verifyIdToken(token);
       const userDoc = await db.collection('users').doc(decoded.uid).get();
-      const isAdmin =
-        decoded.email === 'admin_backend@bersamakita.org' ||
-        decoded.email === 'contohasdf@gmail.com' ||
-        decoded.email === 'bersamakita.my.id@protonmail.com' ||
-        (userDoc.exists && userDoc.data()?.role === 'admin');
+      const isAdmin = await isAdminUser(decoded, adminDb);
       if (!isAdmin) {
         return res.status(403).json({ success: false, message: 'Forbidden: Bukan admin.' });
       }
@@ -530,11 +527,7 @@ router.post('/admin/close', async (req, res) => {
     try {
       const decoded = await fbAuth.verifyIdToken(token);
       const userDoc = await db.collection('users').doc(decoded.uid).get();
-      const isAdmin =
-        decoded.email === 'admin_backend@bersamakita.org' ||
-        decoded.email === 'contohasdf@gmail.com' ||
-        decoded.email === 'bersamakita.my.id@protonmail.com' ||
-        (userDoc.exists && userDoc.data()?.role === 'admin');
+      const isAdmin = await isAdminUser(decoded, adminDb);
       if (!isAdmin) {
         return res.status(403).json({ success: false, message: 'Forbidden: Bukan admin.' });
       }

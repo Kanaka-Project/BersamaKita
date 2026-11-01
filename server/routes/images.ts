@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { adminDb, adminAuth } from '../../src/config/firebase-admin.js';
+import { isPrivilegedUser } from '../lib/role-check.js';
 
 const router = Router();
 
@@ -22,10 +23,7 @@ router.post('/sign', async (req: Request, res: Response): Promise<any> => {
     const isPrivileged =
       role === 'admin' ||
       role === 'partner' ||
-      decodedToken.email === 'admin_backend@bersamakita.org' ||
-      decodedToken.email === 'contohasdf@gmail.com' ||
-      decodedToken.email === 'bersamakita.my.id@protonmail.com' ||
-      decodedToken.email === 'partnerbersamakita@protonmail.com';
+      (await isPrivilegedUser(decodedToken, adminDb));
 
     if (!isPrivileged) {
       return res.status(403).json({ success: false, message: 'Forbidden: akses admin/partner diperlukan' });

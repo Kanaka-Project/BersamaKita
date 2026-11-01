@@ -75,86 +75,27 @@ export function googleSignInErrorMessage(error: any): string {
 export async function loginWithEmail(email: string, pass: string): Promise<{ user: AppUser; profile: UserProfile }> {
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Determine role based on clarified credentials
-  let assignedRole: UserRole = 'user';
+  // Role is resolved from the Firestore user document (and env allow-list),
+  // never from password literals or email substrings.
+  let assignedRole: UserRole = staffRoleForEmail(normalizedEmail);
   let defaultDisplayName = 'Pengguna';
+  if (assignedRole === 'admin') defaultDisplayName = 'Admin Bersama Kita';
+  else if (assignedRole === 'partner') defaultDisplayName = 'Mitra Bersama Kita (PMI/BAZNAS)';
 
-  if (normalizedEmail === 'bersamakita.my.id@protonmail.com' || normalizedEmail.includes('admin')) {
-    assignedRole = 'admin';
-    defaultDisplayName = 'Admin Bersama Kita';
-  } else if (normalizedEmail === 'partnerbersamakita@protonmail.com' || normalizedEmail.includes('partner')) {
-    assignedRole = 'partner';
-    defaultDisplayName = 'Mitra Bersama Kita (PMI/BAZNAS)';
-  }
+  const cred = await signInWithEmailAndPassword(auth, normalizedEmail, pass);
+  const fbUser = cred.user;
 
-  try {
-    let fbUser: FirebaseUser;
-    try {
-      const cred = await signInWithEmailAndPassword(auth, normalizedEmail, pass);
-      fbUser = cred.user;
-    } catch (authErr: any) {
-      // If user not registered yet, auto-register the requested admin or partner credential
-      if (
-        authErr.code === 'auth/user-not-found' ||
-        authErr.code === 'auth/invalid-credential'
-      ) {
-        const newCred = await createUserWithEmailAndPassword(auth, normalizedEmail, pass);
-        fbUser = newCred.user;
-      } else {
-        throw authErr;
-      }
-    }
+  const profile = await syncUserProfile(fbUser, assignedRole === 'user' ? undefined : assignedRole);
+  const appUser: AppUser = {
+    uid: fbUser.uid,
+    email: fbUser.email,
+    displayName: profile.displayName || defaultDisplayName,
+    photoURL: fbUser.photoURL,
+    providerId: 'password',
+  };
 
-    const profile = await syncUserProfile(fbUser, assignedRole);
-    const appUser: AppUser = {
-      uid: fbUser.uid,
-      email: fbUser.email,
-      displayName: profile.displayName || defaultDisplayName,
-      photoURL: fbUser.photoURL,
-      providerId: 'password',
-    };
-
-    safeSet('bersamakita_local_user', JSON.stringify({ user: appUser, profile }));
-    return { user: appUser, profile };
-  } catch (error: any) {
-    console.warn('Firebase email auth notice:', error.code, error.message);
-
-    // If Firebase email auth fails (e.g. invalid credential or network restrictions),
-    // and credentials match the designated Admin or Partner credentials:
-    if (
-      (normalizedEmail === 'bersamakita.my.id@protonmail.com' && pass === 'bersamakita01') ||
-      (normalizedEmail === 'partnerbersamakita@protonmail.com' && pass === 'bersamakita01')
-    ) {
-      const localUid = normalizedEmail === 'bersamakita.my.id@protonmail.com' ? 'admin-bersamakita' : 'partner-bersamakita';
-      const now = new Date().toISOString();
-      const profile: UserProfile = {
-        id: localUid,
-        email: normalizedEmail,
-        displayName: defaultDisplayName,
-        role: assignedRole,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      const appUser: AppUser = {
-        uid: localUid,
-        email: normalizedEmail,
-        displayName: defaultDisplayName,
-        providerId: 'password',
-      };
-
-      try {
-        await setDoc(doc(db, 'users', localUid), profile);
-      } catch (e) {
-        console.warn('Local session created:', e);
-      }
-
-      safeSet('bersamakita_local_user', JSON.stringify({ user: appUser, profile }));
-      return { user: appUser, profile };
-    }
-
-    throw error;
-  }
+  safeSet('bersamakita_local_user', JSON.stringify({ user: appUser, profile }));
+  return { user: appUser, profile };
 }
 
 export async function registerWithEmail(
@@ -232,18 +173,30 @@ export async function registerWithEmail(
  * Dipakai oleh syncUserProfile & AuthContext agar role `users.*` untuk akun
  * staf tidak tertimpa menjadi 'user'.
  */
+// Transitional default allow-lists (kept for backward compatibility so existing
+// staff accounts keep working without env configuration). Move these to
+// VITE_ADMIN_EMAILS / VITE_PARTNER_EMAILS and remove the defaults once all staff
+// accounts have role='admin'/'partner' in Firestore.
+const DEFAULT_ADMIN_EMAILS = [
+  'bersamakita.my.id@protonmail.com',
+  'admin_backend@bersamakita.org',
+  'contohasdf@gmail.com',
+];
+const DEFAULT_PARTNER_EMAILS = ['partnerbersamakita@protonmail.com'];
+
+function envList(key: string, fallback: string[]): string[] {
+  const raw = (import.meta as any).env?.[key];
+  if (raw && String(raw).trim()) {
+    return String(raw).split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
+  }
+  return fallback.map((e) => e.toLowerCase());
+}
+
 export function staffRoleForEmail(email?: string | null): 'admin' | 'partner' | 'user' {
   const normalized = (email || '').toLowerCase();
-  if (
-    normalized === 'bersamakita.my.id@protonmail.com' ||
-    normalized === 'admin_backend@bersamakita.org' ||
-    normalized === 'contohasdf@gmail.com'
-  ) {
-    return 'admin';
-  }
-  if (normalized === 'partnerbersamakita@protonmail.com') {
-    return 'partner';
-  }
+  if (!normalized) return 'user';
+  if (envList('VITE_ADMIN_EMAILS', DEFAULT_ADMIN_EMAILS).includes(normalized)) return 'admin';
+  if (envList('VITE_PARTNER_EMAILS', DEFAULT_PARTNER_EMAILS).includes(normalized)) return 'partner';
   return 'user';
 }
 
@@ -254,10 +207,11 @@ export async function syncUserProfile(user: FirebaseUser | AppUser, forcedRole?:
     const now = new Date().toISOString();
 
     const staffRole = staffRoleForEmail(user.email);
-    const isAdminEmail = staffRole === 'admin';
-    const isPartnerEmail = staffRole === 'partner';
+    const existingRole = snapshot.exists() ? (snapshot.data() as UserProfile).role : undefined;
+    const isAdminEmail = staffRole === 'admin' || existingRole === 'admin';
+    const isPartnerEmail = staffRole === 'partner' || existingRole === 'partner' || existingRole === 'admin';
 
-    let initialRole: UserRole = forcedRole || staffRole;
+    let initialRole: UserRole = forcedRole || staffRole || existingRole || 'user';
 
     if (snapshot.exists()) {
       const data = snapshot.data() as UserProfile;
@@ -272,7 +226,12 @@ export async function syncUserProfile(user: FirebaseUser | AppUser, forcedRole?:
           console.warn('Set admin doc notice:', e);
         }
       }
-      if (forcedRole && data.role !== forcedRole) {
+      // Apply forcedRole only when it is a staff role, or when the existing
+      // role is not already a staff role (never downgrade admin/partner to user).
+      const canApplyForced =
+        !!forcedRole &&
+        (forcedRole === 'admin' || forcedRole === 'partner' || (data.role !== 'admin' && data.role !== 'partner'));
+      if (canApplyForced && data.role !== forcedRole) {
         const updated = { ...data, role: forcedRole, updatedAt: now };
         await setDoc(userRef, updated, { merge: true });
         return updated;

@@ -131,7 +131,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <span className="hidden lg:block text-xs text-slate-500 mr-2">
-            {staffSession?.email || 'bersamakita.my.id@protonmail.com'}
+            {staffSession?.email || ''}
           </span>
           <button
             onClick={() => navigate('/dashboard')}
