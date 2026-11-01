@@ -21,6 +21,8 @@ import {
   BadgeCheck,
   Truck,
   Info,
+  Menu,
+  X,
 } from 'lucide-react';
 import {
   PartnerAllocation,
@@ -125,6 +127,19 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
   } else if (currentPath.includes('/tasks')) {
     activeTab = 'tasks';
   }
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
+
+  const openMobileMenu = () => {
+    setMobileMenuOpen(true);
+    requestAnimationFrame(() => setDrawerVisible(true));
+  };
+
+  const closeMobileMenu = () => {
+    setDrawerVisible(false);
+    setTimeout(() => setMobileMenuOpen(false), 300);
+  };
 
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
@@ -420,8 +435,83 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
           >
             <LogOut className="w-4 h-4" />
           </button>
+
+          {/* Hamburger – mobile only */}
+          <button
+            onClick={openMobileMenu}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+            aria-label="Buka menu navigasi"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
       </header>
+
+      {/* Mobile Hamburger Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeMobileMenu}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <div
+            className={`relative z-10 w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
+              drawerVisible ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200/80 shrink-0">
+              <span className="font-semibold text-sm text-slate-900">Menu Portal Mitra</span>
+              <button
+                onClick={closeMobileMenu}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                aria-label="Tutup menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Drawer Nav */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Navigasi portal mitra">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => { navigate(tab.path); closeMobileMenu(); }}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`w-full flex items-center justify-between gap-2 h-10 px-3 rounded-lg text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 ${
+                      isActive
+                        ? 'bg-slate-100 text-slate-900 font-semibold'
+                        : 'text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="truncate">{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span
+                        className={`shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                          isActive
+                            ? 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            {/* Drawer Footer */}
+            <div className="shrink-0 border-t border-slate-200/80 px-4 py-3">
+              <span className="text-xs text-slate-400 truncate block">{staffSession?.email || ''}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <div className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-10">

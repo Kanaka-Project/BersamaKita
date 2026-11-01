@@ -59,6 +59,17 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
   const location = useLocation();
   const { staffSession, isAdminAuthenticated, logoutStaff } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+
+  const openMobileMenu = () => {
+    setMobileMenuOpen(true);
+    requestAnimationFrame(() => setDrawerVisible(true));
+  };
+
+  const closeMobileMenu = () => {
+    setDrawerVisible(false);
+    setTimeout(() => setMobileMenuOpen(false), 300);
+  };
 
   // ROUTE PROTECTION: Akses /admin WAJIB melalui autentikasi admin di /admin/auth
   if (!isAdminAuthenticated) {
@@ -140,9 +151,8 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
             <LogOut className="w-4 h-4" />
           </button>
 
-          {/* Hamburger – mobile only */}
           <button
-            onClick={() => setMobileMenuOpen(true)}
+            onClick={openMobileMenu}
             className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
             aria-label="Buka menu navigasi"
           >
@@ -151,22 +161,25 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
         </div>
       </header>
 
-      {/* Mobile Hamburger Drawer Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeMobileMenu}
             aria-hidden="true"
           />
           {/* Drawer */}
-          <div className="relative z-10 w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col">
+          <div
+            className={`relative z-10 w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
+              drawerVisible ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200/80 shrink-0">
               <span className="font-semibold text-sm text-slate-900">Menu Operasional</span>
               <button
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                 aria-label="Tutup menu"
               >
@@ -182,7 +195,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => { navigate(tab.path); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate(tab.path); closeMobileMenu(); }}
                     aria-current={isActive ? 'page' : undefined}
                     className={`w-full flex items-center justify-between gap-2 h-10 px-3 rounded-lg text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 ${
                       isActive
