@@ -43,14 +43,14 @@ export const DonationHistory: React.FC<DonationHistoryProps> = ({
 
       {/* Donation List Card */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-base text-slate-900">Riwayat Donasi Anda</h3>
             <p className="text-xs text-slate-500 mt-0.5">Daftar transaksi donasi yang tercatat atas akun Anda.</p>
           </div>
           <button
             onClick={onOpenDonate}
-            className="px-4 py-2 rounded-xl bg-[#0C8F63] text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0C8F63] text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
           >
             Donasi Baru
           </button>
