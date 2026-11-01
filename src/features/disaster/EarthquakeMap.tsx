@@ -401,6 +401,17 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
   const selectedId = selectedDisaster?.id;
 
+  // Konteks dinamis untuk "Pantauan Seismik": hitung jumlah posko per kategori
+  // berdasarkan data `disasters` yang sedang ditampilkan (bukan angka statis).
+  const urgentCount = disasters.filter((d) => (parseFloat(d.magnitude) || 0) >= 5.5).length;
+  const pendingCount = disasters.filter(
+    (d) => d.status === 'pending_verification' && (parseFloat(d.magnitude) || 0) < 5.5
+  ).length;
+  const activeCount = disasters.filter(
+    (d) => d.status !== 'pending_verification' && (parseFloat(d.magnitude) || 0) < 5.5
+  ).length;
+  const totalCount = disasters.length;
+
   return (
     <div
       ref={wrapRef}
@@ -511,30 +522,42 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
         </button>
       </div>
 
-      {/* Top Right Legend Card per screenshot */}
-      <div className="absolute top-4 right-4 z-20 bg-white p-3.5 rounded-2xl shadow-md border border-slate-100 text-slate-800 text-[11px] space-y-2 pointer-events-auto max-w-[200px]">
-        <div className="font-bold text-[10px] uppercase tracking-wider text-slate-700">
-          Pantauan Seismik
+      {/* Legend Card (Pantauan Seismik) — konteks dinamis berdasarkan data */}
+      <div className="absolute bottom-4 right-4 sm:top-4 sm:right-4 z-20 bg-white p-3.5 rounded-2xl shadow-md border border-slate-200 text-slate-800 text-[11px] space-y-2 pointer-events-auto max-w-[200px]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold text-[10px] uppercase tracking-wider text-slate-700">
+            Pantauan Seismik
+          </span>
+          <span className="text-[10px] font-bold text-slate-500">{totalCount} posko</span>
         </div>
-<div className="space-y-1.5 font-medium text-slate-700">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
-              <span>Bantuan Mendesak (M ≥ 5.5)</span>
+        <div className="space-y-1.5 font-medium text-slate-700">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
+                <span>Bantuan Mendesak (M ≥ 5.5)</span>
+              </span>
+              <span className="text-[10px] font-bold text-rose-600 tabular-nums">{urgentCount}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-              <span>Menunggu Verifikasi</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                <span>Menunggu Verifikasi</span>
+              </span>
+              <span className="text-[10px] font-bold text-amber-600 tabular-nums">{pendingCount}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-              <span>Terverifikasi Aktif</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
+                <span>Terverifikasi Aktif</span>
+              </span>
+              <span className="text-[10px] font-bold text-emerald-600 tabular-nums">{activeCount}</span>
             </div>
           </div>
       </div>
 
       {/* Center Top Callout of Selected Disaster matching screenshot */}
       {selectedDisaster && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 text-xs text-slate-800 space-y-1 pointer-events-auto max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 text-xs text-slate-800 space-y-1 pointer-events-auto max-w-sm w-[calc(100%-2rem)] sm:w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="font-bold text-slate-900 leading-snug line-clamp-2">
             {selectedDisaster.location || selectedDisaster.title}
           </div>
