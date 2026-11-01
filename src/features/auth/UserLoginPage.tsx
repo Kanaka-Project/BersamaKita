@@ -54,7 +54,7 @@ export const UserLoginPage: React.FC = () => {
     <div className="min-h-screen flex flex-col-reverse md:flex-row font-sans selection:bg-[#0C8F63] selection:text-white bg-white">
 
       {/* Left Panel: Branding & Illustration with Carousel */}
-      <div className="w-full md:w-1/2 relative p-8 md:p-16 flex flex-col justify-between min-h-[35vh] md:min-h-screen overflow-hidden">
+      <div className="w-full md:w-1/2 relative p-8 md:p-16 flex flex-col justify-between min-h-[30vh] md:min-h-screen overflow-hidden">
 
         {/* Background Image Carousel */}
         {CAROUSEL_IMAGES.map((img, idx) => (
@@ -95,9 +95,9 @@ export const UserLoginPage: React.FC = () => {
       </div>
 
       {/* Right Panel: Login Interaction (Solid White) */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between p-8 md:p-16 min-h-[65vh] md:min-h-screen">
+      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between px-6 pt-4 pb-8 md:p-16 min-h-[70vh] md:min-h-screen">
         {/* Mobile logo (visible only when login panel is on top) */}
-        <button onClick={() => navigate('/')} className="md:hidden flex items-center gap-2.5 mb-8">
+        <button onClick={() => navigate('/')} className="md:hidden flex items-center gap-2.5 mb-4">
           <img src="/assets/images/logo.svg" alt="Logo" className="w-8 h-8" />
           <div className="flex flex-col leading-tight">
             <span className="font-bold text-gray-900 tracking-wide text-xs">BERSAMA KITA</span>
@@ -115,7 +115,7 @@ export const UserLoginPage: React.FC = () => {
           <p className="text-sm text-gray-500 mb-8 font-medium">Selamat datang kembali! Lanjutkan niat baik Anda hari ini.</p>
 
           {/* Feature highlights to fill space and build trust */}
-          <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-8 space-y-4">
+          <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-6 space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5 text-[#0C8F63]" />

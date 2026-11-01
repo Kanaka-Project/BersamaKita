@@ -104,7 +104,7 @@ export const AdminAuthPage: React.FC = () => {
       </div>
 
       {/* Right Panel: Login Interaction (Solid White) */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between p-8 md:p-16 min-h-[70vh] md:min-h-screen">
+      <div className="w-full md:w-1/2 bg-white flex flex-col justify-between px-6 pt-4 pb-8 md:p-16 min-h-[70vh] md:min-h-screen">
         
         {/* Spacer for vertical centering in flex-col */}
         <div className="hidden md:block"></div>
