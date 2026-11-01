@@ -413,8 +413,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   const totalCount = disasters.length;
 
   return (
-    <div
-      ref={wrapRef}
+    <div className="flex flex-col gap-3">
+      <div
+        ref={wrapRef}
       className={`relative w-full h-[440px] sm:h-[540px] lg:h-[620px] rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm select-none touch-none ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
@@ -522,39 +523,6 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
         </button>
       </div>
 
-      {/* Legend Card (Pantauan Seismik) — konteks dinamis berdasarkan data */}
-      <div className="absolute bottom-4 right-4 sm:top-4 sm:right-4 z-20 bg-white p-3.5 rounded-2xl shadow-md border border-slate-200 text-slate-800 text-[11px] space-y-2 pointer-events-auto max-w-[200px]">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-bold text-[10px] uppercase tracking-wider text-slate-700">
-            Pantauan Seismik
-          </span>
-          <span className="text-[10px] font-bold text-slate-500">{totalCount} posko</span>
-        </div>
-        <div className="space-y-1.5 font-medium text-slate-700">
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
-                <span>Bantuan Mendesak (M ≥ 5.5)</span>
-              </span>
-              <span className="text-[10px] font-bold text-rose-600 tabular-nums">{urgentCount}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                <span>Menunggu Verifikasi</span>
-              </span>
-              <span className="text-[10px] font-bold text-amber-600 tabular-nums">{pendingCount}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-                <span>Terverifikasi Aktif</span>
-              </span>
-              <span className="text-[10px] font-bold text-emerald-600 tabular-nums">{activeCount}</span>
-            </div>
-          </div>
-      </div>
-
       {/* Center Top Callout of Selected Disaster matching screenshot */}
       {selectedDisaster && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 text-xs text-slate-800 space-y-1 pointer-events-auto max-w-sm w-[calc(100%-2rem)] sm:w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
@@ -585,6 +553,34 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
           </div>
         </div>
       )}
+      </div>
+
+      {/* Indikator Pantauan Seismik — di bawah peta (tidak menutupi map) */}
+      <div className="bg-white rounded-2xl shadow-md border border-slate-200 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <span className="font-bold text-[10px] uppercase tracking-wider text-slate-700">
+            Pantauan Seismik
+          </span>
+          <span className="text-[10px] font-bold text-slate-500">{totalCount} posko</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] font-medium text-slate-700">
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
+            Bantuan Mendesak (M ≥ 5.5)
+            <span className="text-[10px] font-bold text-rose-600 tabular-nums">{urgentCount}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+            Menunggu Verifikasi
+            <span className="text-[10px] font-bold text-amber-600 tabular-nums">{pendingCount}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
+            Terverifikasi Aktif
+            <span className="text-[10px] font-bold text-emerald-600 tabular-nums">{activeCount}</span>
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
