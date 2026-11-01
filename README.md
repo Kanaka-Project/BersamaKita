@@ -301,7 +301,7 @@ npm run dev
 | Peran | Email | Password |
 |---|---|---|
 | Admin (Dashboard) | `bersamakita.my.id@protonmail.com` | `bersamakita01` |
-| Partner (Mitra Lapangan) | `partnerbersamakita@protonmail.com` | `bersamakita01` |
+| Partner (Mitra Lapangan) | `tanggaplombok@my.id` | `tanggaplombok@my.id` |
 
 Akun di atas dibuat melalui Firebase Authentication (email/password). Pastikan dokumen `users/{uid}` memiliki `role` yang sesuai (`admin` / `partner`) agar akses dashboard berfungsi.
 
