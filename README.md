@@ -97,11 +97,8 @@ Tangkapan layar aplikasi tersedia pada folder `screenshots/`. Berikut contoh tam
 
 ![Beranda Bersama Kita](screenshots/homepage.png)
 
-![Katalog bencana](screenshots/disaster-catalog.png)
 
-![Detail bencana dan donasi](screenshots/disaster-detail.png)
 
-![Dashboard Admin](screenshots/admin-dashboard.png)
 
 Screenshot tambahan (dashboard Mitra Lapangan, transparansi penyaluran) dapat ditambahkan pada folder `screenshots/` sesuai kebutuhan.
 
