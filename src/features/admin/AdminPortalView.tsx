@@ -100,7 +100,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
   return (
     <div className="font-admin min-h-screen bg-white text-slate-900 flex flex-col antialiased selection:bg-slate-900 selection:text-white">
       {/* Top Admin Header */}
-      <header className="sticky top-0 z-40 py-3 bg-white/90 backdrop-blur border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 h-14 bg-white/90 backdrop-blur border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <img src="/assets/images/logo.svg" alt="Logo Bersama Kita" className="w-7 h-7 shrink-0" />
           <div className="flex items-center gap-2 min-w-0">
@@ -190,7 +190,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
         <main className="flex-1 min-w-0 px-4 sm:px-8 py-6 lg:py-8">
           {/* Mobile underline tabs scroller */}
           <nav
-            className="md:hidden -mx-2 px-2 py-3 flex overflow-x-auto whitespace-nowrap scrollbar-hide border-b border-slate-200/80 mb-6"
+            className="md:hidden -mx-4 sm:-mx-8 px-4 sm:px-8 flex items-center gap-5 overflow-x-auto border-b border-slate-200/80 mb-6 -mt-2"
             aria-label="Menu operasional admin"
           >
             {navTabs.map((tab) => {
@@ -200,7 +200,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
                   key={tab.id}
                   onClick={() => navigate(tab.path)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex items-center gap-1.5 py-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                  className={`relative flex items-center gap-1.5 py-3 text-[13px] whitespace-nowrap border-b-2 -mb-px transition-colors ${
                     isActive
                       ? 'border-slate-900 text-slate-900 font-semibold'
                       : 'border-transparent text-slate-500 font-medium hover:text-slate-900'
