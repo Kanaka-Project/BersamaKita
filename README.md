@@ -154,6 +154,20 @@ Detail: `docs/DISASTER.md`.
 8. Status pembayaran diperbarui secara idempoten.
 9. Transaksi masuk ke sistem transparansi.
 
+```mermaid
+flowchart TD
+    A[Pengguna pilih bencana aktif] --> B[Input nominal donasi]
+    B --> C[Backend hitung fee & buat transaksi]
+    C --> D[Duitku QRIS]
+    D --> E[Pembayaran oleh donatur]
+    E --> F[Callback ke backend]
+    F --> G[Validasi HMAC-SHA256]
+    G --> H{Valid?}
+    H -- Tidak --> I[Tolak / abaikan]
+    H -- Ya --> J[Update status idempoten]
+    J --> K[Masuk sistem transparansi]
+```
+
 **Biaya administrasi platform:** 0,17% (perhitungan terpusat di `src/lib/fees.ts`).
 
 ### 3. Penyaluran Dana
@@ -163,6 +177,14 @@ Detail: `docs/DISASTER.md`.
 3. Bukti penyaluran diunggah melalui Cloudinary.
 4. Laporan penyaluran dicatat dalam Firestore.
 5. Informasi penyaluran dapat diakses publik sesuai aturan transparansi.
+
+```mermaid
+flowchart TD
+    A[Admin kelola penyaluran] --> B[Mitra Lapangan distribusi bantuan]
+    B --> C[Upload bukti via Cloudinary]
+    C --> D[Catat laporan di Firestore]
+    D --> E[Publik akses info transparansi]
+```
 
 ## Arsitektur Sistem
 
