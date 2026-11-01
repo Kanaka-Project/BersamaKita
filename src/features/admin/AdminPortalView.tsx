@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import {
   Activity,
@@ -10,6 +10,8 @@ import {
   LogOut,
   ArrowLeft,
   FileCheck2,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { BMKGVerificationCard } from '../disaster/BMKGVerificationCard';
@@ -56,6 +58,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { staffSession, isAdminAuthenticated, logoutStaff } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // ROUTE PROTECTION: Akses /admin WAJIB melalui autentikasi admin di /admin/auth
   if (!isAdminAuthenticated) {
@@ -136,8 +139,85 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
           >
             <LogOut className="w-4 h-4" />
           </button>
+
+          {/* Hamburger – mobile only */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+            aria-label="Buka menu navigasi"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
       </header>
+
+      {/* Mobile Hamburger Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <div className="relative z-10 w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200/80 shrink-0">
+              <span className="font-semibold text-sm text-slate-900">Menu Operasional</span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                aria-label="Tutup menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Drawer Nav */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Menu operasional admin">
+              {navTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                const hasCount = tab.count !== undefined && tab.count > 0;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { navigate(tab.path); setMobileMenuOpen(false); }}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`w-full flex items-center justify-between gap-2 h-10 px-3 rounded-lg text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 ${
+                      isActive
+                        ? 'bg-slate-100 text-slate-900 font-semibold'
+                        : 'text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`} />
+                      <span className="truncate">{tab.label}</span>
+                    </span>
+                    {hasCount && (
+                      <span
+                        className={`shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                          tab.attention
+                            ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/70'
+                            : isActive
+                            ? 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {formatCount(tab.count as number)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            {/* Drawer Footer */}
+            <div className="shrink-0 border-t border-slate-200/80 px-4 py-3">
+              <span className="text-xs text-slate-400 truncate block">{staffSession?.email || ''}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Admin Workspace with Sidebar & Content */}
       <div className="flex-1 flex w-full max-w-[1600px] mx-auto">
@@ -188,32 +268,28 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
 
         {/* Admin Main Content Workspace */}
         <main className="flex-1 min-w-0 px-4 sm:px-8 py-6 lg:py-8">
-          {/* Mobile underline tabs scroller */}
-          <nav
-            className="md:hidden -mx-4 sm:-mx-8 px-4 sm:px-8 flex items-center gap-5 overflow-x-auto border-b border-slate-200/80 mb-6 -mt-2"
-            aria-label="Menu operasional admin"
-          >
-            {navTabs.map((tab) => {
-              const isActive = activeTab === tab.id;
+          {/* Mobile active-tab breadcrumb strip */}
+          <div className="md:hidden -mx-4 sm:-mx-8 px-4 sm:px-8 flex items-center gap-2 border-b border-slate-200/80 mb-6 -mt-2 py-2.5">
+            {(() => {
+              const activeNavTab = navTabs.find(t => t.id === activeTab);
+              const ActiveIcon = activeNavTab?.icon;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => navigate(tab.path)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex items-center gap-1.5 py-3 text-[13px] whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                    isActive
-                      ? 'border-slate-900 text-slate-900 font-semibold'
-                      : 'border-transparent text-slate-500 font-medium hover:text-slate-900'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className="text-[11px] tabular-nums text-slate-400">{formatCount(tab.count)}</span>
+                <>
+                  {ActiveIcon && <ActiveIcon className="w-4 h-4 text-slate-500 shrink-0" />}
+                  <span className="text-[13px] font-semibold text-slate-900 truncate">{activeNavTab?.label}</span>
+                  {activeNavTab?.count !== undefined && activeNavTab.count > 0 && (
+                    <span className={`ml-auto shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                      activeNavTab.attention
+                        ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/70'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {formatCount(activeNavTab.count)}
+                    </span>
                   )}
-                </button>
+                </>
               );
-            })}
-          </nav>
+            })()}
+          </div>
 
           {activeTab === 'bmkg-verification' && (
             <BMKGVerificationCard
