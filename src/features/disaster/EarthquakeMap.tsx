@@ -482,7 +482,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       )}
 
       {/* Kontrol zoom (kiri-atas, menggantikan kontrol Leaflet) */}
-      <div className="absolute top-4 left-4 z-20 flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-md">
+      <div className="absolute top-4 left-4 z-20 flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
         <button
           type="button"
           aria-label="Perbesar peta"
@@ -512,7 +512,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       </div>
 
       {/* Top Right Legend Card per screenshot */}
-      <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-md border border-slate-100 text-slate-800 text-[11px] space-y-2 pointer-events-auto max-w-[200px]">
+      <div className="absolute top-4 right-4 z-20 bg-white p-3.5 rounded-2xl shadow-md border border-slate-100 text-slate-800 text-[11px] space-y-2 pointer-events-auto max-w-[200px]">
         <div className="font-bold text-[10px] uppercase tracking-wider text-slate-700">
           Pantauan Seismik
         </div>
@@ -534,7 +534,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
       {/* Center Top Callout of Selected Disaster matching screenshot */}
       {selectedDisaster && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-200 text-xs text-slate-800 space-y-1 pointer-events-auto max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 text-xs text-slate-800 space-y-1 pointer-events-auto max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="font-bold text-slate-900 leading-snug line-clamp-2">
             {selectedDisaster.location || selectedDisaster.title}
           </div>

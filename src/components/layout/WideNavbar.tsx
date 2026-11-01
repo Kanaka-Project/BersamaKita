@@ -63,7 +63,7 @@ export const WideNavbar: React.FC = () => {
     (path !== '/dashboard' && location.pathname.startsWith(path));
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 sm:px-8 py-3 transition-all">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 sm:px-8 py-3 transition-all shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left: Brand "Bersama Kita" */}
         <div
@@ -84,7 +84,7 @@ export const WideNavbar: React.FC = () => {
         </div>
 
         {/* Center: Main Path-Based Navigation Tabs (desktop) */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-50/80 p-1 rounded-full border border-slate-200/60">
+        <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -95,7 +95,7 @@ export const WideNavbar: React.FC = () => {
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   active
                     ? 'bg-white text-emerald-800 shadow-sm border border-slate-100 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                 }`}
               >
                 <Icon
@@ -162,7 +162,7 @@ export const WideNavbar: React.FC = () => {
         <div className="fixed inset-0 z-50 md:hidden flex">
           {/* Backdrop */}
           <div
-            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 bg-slate-900/60 transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
             onClick={closeMobileMenu}
             aria-hidden="true"
           />

@@ -22,7 +22,7 @@ export const AnalisisSituasiModal: React.FC<AnalisisSituasiModalProps> = ({
   const isShallow = parseInt(disaster.depth.replace(/[^0-9]/g, ''), 10) <= 50;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 text-slate-900 shadow-2xl relative border border-slate-200 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}

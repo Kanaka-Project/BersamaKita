@@ -108,7 +108,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                 <button
                   type="button"
                   onClick={handlePickClick}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/95 hover:bg-white text-[11px] font-bold text-slate-700 border border-slate-200 shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 border border-slate-200 shadow-sm cursor-pointer"
                 >
                   <UploadCloud className="w-3.5 h-3.5" />
                   <span>Ganti</span>
@@ -116,7 +116,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                 <button
                   type="button"
                   onClick={handleRemove}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/95 hover:bg-rose-50 text-[11px] font-bold text-rose-600 border border-slate-200 shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-[11px] font-bold text-rose-600 border border-slate-200 shadow-sm cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Hapus</span>
