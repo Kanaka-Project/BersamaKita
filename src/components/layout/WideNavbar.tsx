@@ -125,7 +125,7 @@ export const WideNavbar: React.FC = () => {
                   displayName[0].toUpperCase()
                 )}
               </div>
-              <span className="hidden sm:inline-block text-xs font-semibold text-slate-800 max-w-[120px] truncate">
+              <span className="hidden sm:inline-block text-xs font-semibold text-slate-800 max-w-30 truncate">
                 {displayName}
               </span>
               <button

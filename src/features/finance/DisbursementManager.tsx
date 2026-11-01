@@ -294,7 +294,7 @@ export const DisbursementManager: React.FC<DisbursementManagerProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {recapRows.map((row) => (
                   <tr key={row.disasterId} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-4 px-6 min-w-[200px]">
+                    <td className="py-4 px-6 min-w-50">
                       <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span className="wrap-break-word">{row.disasterTitle}</span>
@@ -387,11 +387,11 @@ export const DisbursementManager: React.FC<DisbursementManagerProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {disbursements.map((d) => (
                   <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-4 px-6 font-mono min-w-[160px] break-all">
+                    <td className="py-4 px-6 font-mono min-w-40 break-all">
                       <div className="font-bold text-slate-800">{d.id}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{formatDateIndo(d.requestedAt)}</div>
                     </td>
-                    <td className="py-4 px-6 min-w-[200px]">
+                    <td className="py-4 px-6 min-w-50">
                       <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span className="wrap-break-word">{d.disasterTitle || 'Tanpa Bencana (Lama)'}</span>

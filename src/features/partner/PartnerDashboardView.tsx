@@ -492,7 +492,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
                     <span className="truncate">{tab.label}</span>
                     {tab.count !== undefined && (
                       <span
-                        className={`shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                        className={`shrink-0 min-w-5.5 h-4.5 px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
                           isActive
                             ? 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200'
                             : 'bg-slate-100 text-slate-500'
@@ -514,7 +514,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
       )}
 
       {/* Main Container */}
-      <div className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-10">
+      <div className="flex-1 w-full max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-10">
         {/* Page heading + tabs */}
         <div className="space-y-6">
           <div>
@@ -550,7 +550,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
                     <span>{tab.label}</span>
                     {tab.count !== undefined && (
                       <span
-                        className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-md text-[11px] font-medium tabular-nums transition-colors duration-200 ${
+                        className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-md text-[11px] font-medium tabular-nums transition-colors duration-200 ${
                           isActive
                             ? 'bg-slate-900 text-white'
                             : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200/70'
@@ -589,7 +589,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
                     <Icon className="w-4 h-4" />
                   </span>
                 </div>
-                <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 tabular-nums break-words">
+                <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 tabular-nums wrap-break-word">
                   {metric.value}
                 </div>
                 <p className="mt-1 text-xs text-slate-400 leading-snug">{metric.hint}</p>
@@ -642,7 +642,7 @@ export const PartnerDashboardView: React.FC<PartnerDashboardViewProps> = ({
                       </p>
 
                       <p className="text-[13px] text-slate-500 flex items-start gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 mt-[3px] shrink-0 text-slate-400" aria-hidden="true" />
+                        <MapPin className="w-3.5 h-3.5 mt-0.75 shrink-0 text-slate-400" aria-hidden="true" />
                         <span className="min-w-0">
                           Target: <span className="text-slate-700">{don.disasterTitle || 'Tanggap Darurat'}</span>
                         </span>

@@ -483,7 +483,7 @@ export const BMKGVerificationCard: React.FC<BMKGVerificationCardProps> = ({
                       title={`Koordinat: ${disaster.coordinates?.latitude}, ${disaster.coordinates?.longitude}`}
                     >
                       <dt className="sr-only">Lokasi</dt>
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-[3px]" aria-hidden="true" />
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.75" aria-hidden="true" />
                       <dd className="leading-snug">{disaster.location}</dd>
                     </div>
                     <div

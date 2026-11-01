@@ -109,7 +109,7 @@ export const AdminAuthPage: React.FC = () => {
         {/* Spacer for vertical centering in flex-col */}
         <div className="hidden md:block"></div>
 
-        <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center">
+        <div className="w-full max-w-90 mx-auto flex flex-col justify-center">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
             Admin Login
           </h1>

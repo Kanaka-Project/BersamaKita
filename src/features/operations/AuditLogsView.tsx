@@ -110,10 +110,10 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({ logs, onReset }) =
               <tbody className="divide-y divide-slate-100 font-mono">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-6 text-slate-500 whitespace-nowrap text-[11px] min-w-[120px]">
+                    <td className="py-3.5 px-6 text-slate-500 whitespace-nowrap text-[11px] min-w-30">
                       {formatDateIndo(log.timestamp)}
                     </td>
-                    <td className="py-3.5 px-6 font-sans min-w-[160px]">
+                    <td className="py-3.5 px-6 font-sans min-w-40">
                       <div className="font-semibold text-slate-800 text-xs break-all">
                         {log.actorEmail || log.actorId}
                       </div>
@@ -121,15 +121,15 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({ logs, onReset }) =
                         [{log.actorRole}]
                       </span>
                     </td>
-                    <td className="py-3.5 px-6 min-w-[160px]">
+                    <td className="py-3.5 px-6 min-w-40">
                       <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-[11px]">
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-3.5 px-6 text-slate-600 text-[11px] min-w-[200px] break-all">
+                    <td className="py-3.5 px-6 text-slate-600 text-[11px] min-w-50 break-all">
                       {log.entityType}: {log.entityId}
                     </td>
-                    <td className="py-3.5 px-6 text-[10px] text-slate-500 min-w-[250px] max-w-sm wrap-break-word font-sans">
+                    <td className="py-3.5 px-6 text-[10px] text-slate-500 min-w-62.5 max-w-sm wrap-break-word font-sans">
                       {log.after ? JSON.stringify(log.after) : '-'}
                     </td>
                   </tr>

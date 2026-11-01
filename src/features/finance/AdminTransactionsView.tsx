@@ -165,7 +165,7 @@ export const AdminTransactionsView: React.FC<AdminTransactionsViewProps> = ({
                   const isPaid = d.status === 'paid';
                   return (
                     <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-4 px-6 font-mono font-bold text-slate-800 break-all min-w-[200px]">
+                      <td className="py-4 px-6 font-mono font-bold text-slate-800 break-all min-w-50">
                         {d.id}
                       </td>
                       <td className="py-4 px-6 min-w-[180px]">

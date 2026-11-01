@@ -209,7 +209,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
                     </span>
                     {hasCount && (
                       <span
-                        className={`shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                        className={`shrink-0 min-w-5.5 h-4.5 px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
                           tab.attention
                             ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/70'
                             : isActive
@@ -262,7 +262,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
                   </span>
                   {hasCount && (
                     <span
-                      className={`shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                      className={`shrink-0 min-w-5.5 h-4.5 px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
                         tab.attention
                           ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/70'
                           : isActive
@@ -291,7 +291,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
                   {ActiveIcon && <ActiveIcon className="w-4 h-4 text-slate-500 shrink-0" />}
                   <span className="text-[13px] font-semibold text-slate-900 truncate">{activeNavTab?.label}</span>
                   {activeNavTab?.count !== undefined && activeNavTab.count > 0 && (
-                    <span className={`ml-auto shrink-0 min-w-[22px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
+                    <span className={`ml-auto shrink-0 min-w-5.5 h-4.5 px-1.5 inline-flex items-center justify-center rounded-md text-[11px] font-medium tabular-nums ${
                       activeNavTab.attention
                         ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/70'
                         : 'bg-slate-100 text-slate-500'

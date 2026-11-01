@@ -148,7 +148,7 @@ export const MinimalistLanding: React.FC = () => {
       </div>
 
       {/* Right Panel: Full Image Carousel (50%) */}
-      <div className="w-full md:w-1/2 relative bg-slate-900 min-h-[400px] md:min-h-screen">
+      <div className="w-full md:w-1/2 relative bg-slate-900 min-h-100 md:min-h-screen">
         {CAROUSEL_IMAGES.map((img, idx) => (
           <div
             key={idx}
